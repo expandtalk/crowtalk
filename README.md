@@ -32,9 +32,12 @@ CrowTalk is a single-file HTML app built for fieldwork. It combines a library of
 
 ## Getting started on iPhone
 
-1. Visit the GitHub Pages URL above in **Safari**
-2. Tap the share icon → **Add to Home Screen**
-3. Open CrowTalk from your home screen — it works fully offline
+1. Open **Safari** and go to `https://expandtalk.github.io/crowtalk/`
+2. Tap the **Share** button (box with arrow pointing up) at the bottom of the screen
+3. Scroll down and tap **Add to Home Screen**
+4. Keep the name "CrowTalk" and tap **Add**
+5. The CrowTalk icon now appears on your home screen — tap it to open the app
+6. The app works **fully offline** — no internet connection needed after the first load
 
 ---
 

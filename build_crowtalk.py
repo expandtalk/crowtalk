@@ -113,7 +113,7 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-
   padding:10px 16px;padding-top:calc(var(--safe-t) + 10px);
   display:flex;align-items:center;gap:12px
 }}
-.topbar svg{{width:30px;height:30px;flex-shrink:0}}
+.topbar svg,.topbar img{{width:36px;height:36px;flex-shrink:0;border-radius:8px;object-fit:contain}}
 .topbar h1{{font-size:17px;font-weight:600;letter-spacing:-0.2px}}
 .topbar p{{font-size:11px;color:var(--t3);font-family:monospace}}
 .offline-badge{{
@@ -567,24 +567,7 @@ input[type=range]::-webkit-slider-thumb{{
 <div class="shell">
 
   <div class="topbar">
-    <svg viewBox="0 0 64 64" fill="currentColor">
-      <!-- Head -->
-      <path d="M18 21 C10 21 5 16 7 11 C9 7 14 5 20 7 C26 5 30 9 27 15 C25 19 22 21 18 21Z"/>
-      <!-- Beak -->
-      <path d="M7 11 L0 9 L7 15Z"/>
-      <!-- Body -->
-      <path d="M18 21 C13 24 11 30 13 36 C15 42 20 46 27 47 C35 48 44 45 48 39 C52 33 50 24 45 20 C40 16 33 15 27 16 C23 17 20 19 18 21Z"/>
-      <!-- Tail -->
-      <path d="M44 41 L57 50 L59 43 L57 35 L50 39Z"/>
-      <!-- Wing sheen -->
-      <path d="M22 28 Q36 23 46 30 Q36 37 22 28Z" fill="rgba(255,255,255,0.07)"/>
-      <!-- Eye -->
-      <circle cx="16" cy="13" r="3.2" fill="#07090a"/>
-      <circle cx="16.8" cy="12.2" r="1.1" fill="rgba(255,255,255,0.55)"/>
-      <!-- Legs -->
-      <path d="M26 47 L23 57 M23 57 L19 61 M23 57 L23 61 M23 57 L27 61" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-      <path d="M34 48 L31 58 M31 58 L27 62 M31 58 L31 62 M31 58 L35 62" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-    </svg>
+    {'<img src="' + ICON_APPLE + '" alt="CrowTalk">' if ICON_APPLE else ''}
     <div>
       <h1>CrowTalk</h1>
       <p id="topSub">Corvus cornix</p>

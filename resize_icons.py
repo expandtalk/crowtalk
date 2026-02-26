@@ -88,8 +88,11 @@ else:
 
 def save_square(size, filename):
     """Resize to square, compositing on dark background for opaque output."""
-    # Resize keeping aspect ratio, then center on square canvas
     img = src.copy()
+    # Crop to actual content (removes transparent borders from landscape source)
+    bb = img.getbbox()
+    if bb:
+        img = img.crop(bb)
     img.thumbnail((size, size), Image.LANCZOS)
     canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     x = (size - img.width) // 2
