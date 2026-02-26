@@ -1916,20 +1916,28 @@ function renderContextPanel(){{
 
 // ── Help system ────────────────────────────────────────────────────────
 const HELP={{
-  library:{{title:'Library',body:`<p>Browse and play all crow sounds.</p><ul>
-<li><b>SYN</b> (amber) — Synthesized via Web Audio — no audio file needed</li>
-<li><b>XC</b> (blue) — Real field recordings from xeno-canto.org</li>
-<li><b>⚠</b> (red) — Alarm / danger calls — use with care near crows</li></ul>
-<p>Tap a row to open the player. Drag the <b>⠿</b> handle on the left to reorder rows — your order is saved automatically. Use the filter buttons above to show only one type.</p>
-<hr style="border-color:var(--border);margin:14px 0">
-<p><b>📱 Install on iPhone</b></p>
-<ol style="padding-left:18px;margin:8px 0">
-<li>Open this page in <b>Safari</b></li>
-<li>Tap the <b>Share</b> button <span style="font-family:monospace;background:var(--s2);padding:1px 5px;border-radius:4px">⎙</span> at the bottom of the screen</li>
-<li>Scroll down and tap <b>"Add to Home Screen"</b></li>
-<li>Name it <b>CrowTalk</b> → tap <b>Add</b></li>
+  library:{{title:'Getting started',body:`<p style="margin-bottom:10px">CrowTalk is a field tool for studying and communicating with corvids. All sounds and data are stored on your device — no account needed.</p>
+<hr style="border-color:var(--border);margin:12px 0">
+<p style="font-weight:600;margin-bottom:8px">📱 Install on iPhone</p>
+<ol style="padding-left:20px;margin:0 0 10px;line-height:1.9">
+<li>Open <b>Safari</b> and go to<br><a href="https://expandtalk.github.io/crowtalk/" style="color:var(--green);word-break:break-all">expandtalk.github.io/crowtalk</a></li>
+<li>Tap the <b>Share</b> button (box with arrow ↑) at the bottom of the screen</li>
+<li>Scroll down and tap <b>Add to Home Screen</b></li>
+<li>Keep the name <b>CrowTalk</b> and tap <b>Add</b></li>
+<li>The CrowTalk icon now appears on your home screen — tap it to open the app</li>
+<li>The app works fully offline — no internet needed after the first load</li>
 </ol>
-<p style="color:var(--t3);font-size:13px;margin-top:6px">The app works fully offline once installed — no internet required.</p>`}},
+<hr style="border-color:var(--border);margin:12px 0">
+<p style="font-weight:600;margin-bottom:6px">Sound types in the Library</p>
+<ul style="padding-left:18px;margin:0 0 10px;line-height:1.9">
+<li><b>SYN</b> (amber) — Synthesized via Web Audio</li>
+<li><b>XC</b> (blue) — Real recordings from xeno-canto.org</li>
+<li><b>🎙</b> (purple) — Your own field recordings</li>
+<li><b>⚠</b> (red) — Alarm / danger calls — use with care</li>
+</ul>
+<p>Tap a row to open the player. Drag <b>⠿</b> to reorder.</p>
+<hr style="border-color:var(--border);margin:12px 0">
+<p style="font-size:13px;color:var(--t3)">Source &amp; feedback: <a href="https://github.com/expandtalk/crowtalk" style="color:var(--green)">github.com/expandtalk/crowtalk</a></p>`}},
   record:{{title:'Record',body:`<p>Record crow sounds in the field with automatic GPS tagging.</p><ul>
 <li>Tap the red button to start / stop a recording</li>
 <li>After recording, set category, phonetics, and the crow's reaction</li>
