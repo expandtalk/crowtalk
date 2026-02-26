@@ -5,14 +5,14 @@ CrowTalk is a self-contained, offline-first single-file HTML app for studying an
 
 ## Key architecture
 - **`build_crowtalk.py`** — Python generator. Reads audio files from `ljud/`, base64-encodes them, and injects everything into a single HTML file.
-- **`CrowTalk_App.html`** — Output: self-contained ~17MB app with all audio, CSS and JS embedded.
+- **`index.html`** — Output: self-contained ~17MB app with all audio, CSS and JS embedded.
 - **`ljud/`** — Local XC (xeno-canto) audio files. Files >6MB are skipped to keep the app loadable on iPhone.
 
 ## Build command
 ```bash
 python3 build_crowtalk.py
 ```
-Output: `CrowTalk_App.html` (deploy this file via GitHub Pages or transfer to iPhone).
+Output: `index.html` (deploy this file via GitHub Pages or transfer to iPhone).
 
 ## App structure (5 tabs)
 | Tab | Description |
@@ -59,4 +59,4 @@ The app is designed to be extensible. To add a species:
 - **Xeno-canto**: https://xeno-canto.org — Source of XC recordings
 
 ## GitHub Pages deployment
-The built `CrowTalk_App.html` can be served directly via GitHub Pages. Users access it in Safari on iPhone, then add to home screen for an offline app experience.
+The built `index.html` can be served directly via GitHub Pages. Users access it in Safari on iPhone, then add to home screen for an offline app experience.

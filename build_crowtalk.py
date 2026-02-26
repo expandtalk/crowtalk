@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Build CrowTalk_App.html – self-contained offline app with real crow audio,
+Build index.html – self-contained offline app with real crow audio,
 recording capability, field journal, alarm safety, and theory page.
 """
 import base64, os, json
