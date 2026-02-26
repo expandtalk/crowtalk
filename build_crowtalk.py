@@ -138,11 +138,13 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-
 /* ── FILTER BAR ─────────────────────────────────────────────────── */
 .filter-bar{{
   background:var(--s1);border-bottom:1px solid var(--border);
-  padding:10px 12px;display:flex;gap:8px;overflow-x:auto;
-  -webkit-overflow-scrolling:touch;flex-shrink:0;
-  scrollbar-width:none
+  padding:6px 12px 2px;flex-shrink:0
 }}
-.filter-bar::-webkit-scrollbar{{display:none}}
+.filter-row{{
+  display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;padding-bottom:6px;align-items:center
+}}
+.filter-row::-webkit-scrollbar{{display:none}}
 .filter-chip{{
   padding:6px 14px;border-radius:20px;border:1px solid var(--border);
   font-size:13px;color:var(--t2);background:var(--s2);white-space:nowrap;
@@ -151,6 +153,8 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-
 .filter-chip.on{{background:var(--green);color:#000;border-color:var(--green);font-weight:600}}
 .filter-chip.type-real.on{{background:var(--blue);color:#000;border-color:var(--blue)}}
 .filter-chip.type-synth.on{{background:var(--amber);color:#000;border-color:var(--amber)}}
+.filter-chip.field-hq.on{{background:var(--green);color:#000;border-color:var(--green);font-weight:600}}
+.filter-chip.field-new.on{{background:var(--purple);color:#fff;border-color:var(--purple);font-weight:600}}
 
 /* ── SOUND LIST ─────────────────────────────────────────────────── */
 .sound-list{{padding:8px 12px}}
@@ -187,6 +191,7 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-
 .type-badge.real{{background:rgba(79,168,232,0.15);color:var(--blue);border:1px solid rgba(79,168,232,0.35)}}
 .type-badge.synth{{background:rgba(240,168,50,0.15);color:var(--amber);border:1px solid rgba(240,168,50,0.35)}}
 .type-badge.danger{{background:rgba(232,85,85,0.15);color:var(--red);border:1px solid rgba(232,85,85,0.35)}}
+.type-badge.field{{background:rgba(167,139,250,0.15);color:var(--purple);border:1px solid rgba(167,139,250,0.35)}}
 .empty-state{{padding:40px 16px;text-align:center;color:var(--t3);font-size:13px}}
 .drag-handle{{width:18px;height:42px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--t3);cursor:grab;touch-action:none}}
 .drag-handle:active{{cursor:grabbing;color:var(--t2)}}
@@ -1514,6 +1519,30 @@ if (navigator.geolocation) {{
 }}
 
 // Order: 1) Synths  2) XC recordings (geo-sorted if location known)  3) Field recordings (badge: own)
+let fieldItems = [];
+async function loadFieldItems() {{
+  if (!db) {{ fieldItems = []; return; }}
+  const recs = await dbGetAll('recordings');
+  const hqRaw = getHQName().trim().toLowerCase();
+  fieldItems = recs.map(r => {{
+    const placeRaw = (r.place||'').trim().toLowerCase();
+    const territory = (hqRaw && placeRaw === hqRaw) ? 'hq' : 'new';
+    const dateStr = r.recTime
+      ? new Date(r.recTime).toLocaleDateString('sv-SE',{{month:'short',day:'numeric'}})
+      : '';
+    return {{
+      id: 'field_' + r.id,
+      type: 'field',
+      territory,
+      name: r.phonetic || r.category || 'Field recording',
+      sub: [r.place, dateStr].filter(Boolean).join(' · '),
+      cat: r.category || '',
+      notes: r.tolkning || '',
+      audio: null, synth: null, danger: false, fieldRec: r
+    }};
+  }});
+}}
+
 function buildAllItems() {{
   const lbl = getLabels();
 
@@ -1539,7 +1568,7 @@ function buildAllItems() {{
   }});
   if (userLat) reals.sort((a,b) => (a.dist??9999) - (b.dist??9999));
 
-  return applyCustomOrder([...synths, ...reals]);
+  return [...applyCustomOrder([...synths, ...reals]), ...fieldItems];
 }}
 
 // ── Labels (localStorage) ───────────────────────────────────────────
@@ -1610,15 +1639,20 @@ let activeFilters = new Set(['all']);
 
 function renderFilterBar() {{
   const bar = document.getElementById('filterBar');
-  const filters = [
-    {{id:'all',   label:'All',           cls:''}},
-    {{id:'real',  label:'🔵 Real',       cls:'type-real'}},
-    {{id:'synth', label:'🟡 Synthetic',  cls:'type-synth'}},
+  const typeFilters = [
+    {{id:'all',   label:'All',          cls:''}},
+    {{id:'real',  label:'🔵 Real',      cls:'type-real'}},
+    {{id:'synth', label:'🟡 Synthetic', cls:'type-synth'}},
     ...CATEGORIES.map(c=>( {{id:'cat_'+c.id, label:c.label, cls:''}} )),
   ];
-  bar.innerHTML = filters.map(f => `
-    <button class="filter-chip ${{f.cls}} ${{activeFilters.has(f.id)?'on':''}}"
-      data-fid="${{f.id}}">${{f.label}}</button>`).join('');
+  bar.innerHTML = `
+    <div class="filter-row">
+      <button class="filter-chip field-hq ${{activeFilters.has('field_hq')?'on':''}}" data-fid="field_hq">🏠 Home Quarter</button>
+      <button class="filter-chip field-new ${{activeFilters.has('field_new')?'on':''}}" data-fid="field_new">🌲 New Territory</button>
+    </div>
+    <div class="filter-row">
+      ${{typeFilters.map(f=>`<button class="filter-chip ${{f.cls}} ${{activeFilters.has(f.id)?'on':''}}" data-fid="${{f.id}}">${{f.label}}</button>`).join('')}}
+    </div>`;
   bar.querySelectorAll('.filter-chip').forEach(btn => {{
     btn.addEventListener('click', () => {{
       const fid = btn.dataset.fid;
@@ -1626,8 +1660,9 @@ function renderFilterBar() {{
         activeFilters = new Set(['all']);
       }} else {{
         activeFilters.delete('all');
-        if (activeFilters.has(fid)) {{ activeFilters.delete(fid); if (!activeFilters.size) activeFilters.add('all'); }}
+        if (activeFilters.has(fid)) activeFilters.delete(fid);
         else activeFilters.add(fid);
+        if (!activeFilters.size) activeFilters.add('all');
       }}
       renderFilterBar();
       renderSoundList();
@@ -1638,17 +1673,26 @@ function renderFilterBar() {{
 function getFilteredItems() {{
   const items = buildAllItems();
   if (activeFilters.has('all')) return items;
+  const hasFieldHQ  = activeFilters.has('field_hq');
+  const hasFieldNew = activeFilters.has('field_new');
+  const hasFieldFilter = hasFieldHQ || hasFieldNew;
+  const catFilters  = [...activeFilters].filter(f=>f.startsWith('cat_'));
+  const hasTypeFilter = activeFilters.has('real') || activeFilters.has('synth');
+  const hasCatFilter  = catFilters.length > 0;
   return items.filter(item => {{
+    if (item.type === 'field') {{
+      if (!hasFieldFilter) return false;
+      return (hasFieldHQ && item.territory==='hq') || (hasFieldNew && item.territory==='new');
+    }}
+    // real / synth items
+    if (!hasTypeFilter && !hasCatFilter) return false;
     const typeMatch = (activeFilters.has('real') && item.type==='real') ||
                       (activeFilters.has('synth') && item.type==='synth');
-    const catFilters = [...activeFilters].filter(f=>f.startsWith('cat_'));
-    const catMatch = catFilters.some(f => f.replace('cat_','') === item.cat);
-    const hasTypeFilter = activeFilters.has('real') || activeFilters.has('synth');
-    const hasCatFilter  = catFilters.length > 0;
+    const catMatch  = catFilters.some(f => f.replace('cat_','') === item.cat);
     if (hasTypeFilter && hasCatFilter) return typeMatch && catMatch;
     if (hasTypeFilter) return typeMatch;
     if (hasCatFilter)  return catMatch;
-    return true;
+    return false;
   }});
 }}
 
@@ -1779,7 +1823,7 @@ const CTX_TIPS={{
 function renderContextPanel(){{
   const el=document.getElementById('ctxPanel');
   if(!el) return;
-  const show=(activeTab==='library'||activeTab==='record');
+  const show=(activeTab==='record');
   el.style.display=show?'block':'none';
   if(!show) return;
   const mode=getTerritoryMode();
@@ -1863,7 +1907,7 @@ function renderSoundList() {{
       <div class="mini-play" id="mp-${{item.id}}">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
       </div>
-      <div class="type-badge ${{isDanger?'danger':item.type}}">${{isDanger?'⚠':item.type==='real'?'XC':'SYN'}}</div>
+      <div class="type-badge ${{isDanger?'danger':item.type}}">${{isDanger?'⚠':item.type==='real'?'XC':item.type==='field'?'🎙':'SYN'}}</div>
       <div class="sound-info">
         <div class="sound-name">${{item.name}}${{isDanger?' ⚠️':''}}</div>
         <div class="sound-meta">${{item.sub}}</div>
@@ -2443,7 +2487,7 @@ async function savePending() {{
     ts: Date.now(),
     duration: pendingAudio?.duration||0
   }});
-  discardPending(); renderField();
+  discardPending(); renderField(); loadFieldItems();
 }}
 
 async function renderField() {{
@@ -2708,6 +2752,7 @@ async function init() {{
   // Wrap separately so a DB failure never blocks the sound list.
   try {{
     await openDB();
+    await loadFieldItems();
   }} catch(e) {{
     console.warn('IndexedDB unavailable (private mode or blocked):', e);
     // db remains undefined; field recording / journal tabs will be disabled
