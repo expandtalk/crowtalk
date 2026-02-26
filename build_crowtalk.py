@@ -2088,8 +2088,8 @@ function loadPlayerItem() {{
   const bigPlay = document.getElementById('bigPlay');
   bigPlay.classList.toggle('danger-play', item.danger && !item.danger); // reset initially
 
-  // Progress bar: only for real audio
-  document.getElementById('playerProgress').style.display = item.type==='real' ? 'block' : 'none';
+  // Progress bar: for real audio and field recordings
+  document.getElementById('playerProgress').style.display = (item.type==='real'||item.type==='field') ? 'block' : 'none';
 
   // Label chips (only for real recordings)
   const lbl = getLabels();
@@ -2286,9 +2286,16 @@ function handleBigPlayClick() {{
     }}
     return;
   }}
-  // Real audio – use Blob URL for iOS Safari compatibility
+  // Real / field audio – use Blob URL for iOS Safari compatibility
+  let blobUrl;
+  if (item.type === 'field') {{
+    const blob = item.fieldRec?.blob;
+    if (!blob) return;
+    blobUrl = blobUrlCache[item.id] || (blobUrlCache[item.id] = URL.createObjectURL(blob));
+  }} else {{
+    blobUrl = getBlobUrl(item);
+  }}
   if (mainAudio.paused) {{
-    const blobUrl = getBlobUrl(item);
     if (mainAudio.src !== blobUrl) {{
       mainAudio.src = blobUrl;
       mainAudio.load();
