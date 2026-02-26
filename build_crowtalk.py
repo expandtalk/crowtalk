@@ -3,7 +3,66 @@
 Build index.html – self-contained offline app with real crow audio,
 recording capability, field journal, alarm safety, and theory page.
 """
-import base64, os, json
+import base64, os, json, io, warnings
+warnings.filterwarnings('ignore')
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
+from scipy.signal import spectrogram as _sg
+
+# Dark app-themed colormap: silence → teal → green → amber peak
+_CROW_CMAP = LinearSegmentedColormap.from_list('crow', [
+    '#07090a', '#0d2535', '#1a4a5a', '#2dd4bf', '#3ecf72', '#f0a832'])
+
+def make_sono(path):
+    """Generate a base64-encoded spectrogram PNG for an audio file."""
+    try:
+        import soundfile as sf
+        raw, sr = sf.read(path, always_2d=True)
+        data = raw.mean(axis=1).astype(np.float32)
+    except Exception:
+        try:
+            from scipy.io import wavfile
+            sr, raw = wavfile.read(path)
+            if raw.ndim > 1:
+                raw = raw.mean(axis=1)
+            data = raw.astype(np.float32)
+            if data.max() > 1.0:
+                data = data / float(np.iinfo(raw.dtype).max)
+        except Exception as e:
+            print(f"    ⚠ sono skip ({e})")
+            return None
+
+    # Downsample to 22050 Hz max
+    if sr > 22050:
+        step = sr // 22050
+        data = data[::step]
+        sr = sr // step
+
+    nperseg = min(512, len(data) // 8)
+    f, t, Sxx = _sg(data, fs=sr, nperseg=nperseg, noverlap=nperseg*3//4, nfft=1024)
+    mask = f <= 8000
+    Sxx_db = 10 * np.log10(np.maximum(Sxx[mask], 1e-10))
+    vmin, vmax = np.percentile(Sxx_db, [5, 99])
+
+    fig = plt.figure(figsize=(5.5, 1.3))
+    fig.patch.set_facecolor('#07090a')
+    ax = fig.add_axes([0.07, 0.15, 0.92, 0.78])
+    ax.pcolormesh(t, f[mask] / 1000, Sxx_db, vmin=vmin, vmax=vmax,
+                  cmap=_CROW_CMAP, shading='gouraud')
+    ax.set_facecolor('#07090a')
+    ax.set_ylim(0, 8)
+    ax.set_ylabel('kHz', color='#556070', fontsize=7, labelpad=2)
+    ax.tick_params(colors='#556070', labelsize=6, length=2, width=0.5)
+    for sp in ax.spines.values():
+        sp.set_edgecolor('#2a3540')
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', dpi=80, facecolor='#07090a', edgecolor='none')
+    plt.close(fig)
+    return base64.b64encode(buf.getvalue()).decode()
 
 _HERE     = os.path.dirname(os.path.abspath(__file__))
 AUDIO_DIR = os.path.join(_HERE, "ljud")
@@ -58,16 +117,19 @@ for fname in sorted(os.listdir(AUDIO_DIR)):
     coords = XC_COORDS.get(xc_id)
     with open(path, 'rb') as f:
         b64 = base64.b64encode(f.read()).decode('utf-8')
+    sono = make_sono(path)
     recordings.append({'id': xc_id, 'fname_label': fname_label, 'mime': mime, 'size': size, 'audio': b64,
                         'lat': coords[0] if coords else None,
-                        'lon': coords[1] if coords else None})
-    print(f"  ✓ {xc_id}  {size//1024}KB")
+                        'lon': coords[1] if coords else None,
+                        'sono': sono})
+    sono_kb = f"  +{len(sono)//1024}KB sono" if sono else "  (no sono)"
+    print(f"  ✓ {xc_id}  {size//1024}KB{sono_kb}")
 
 print(f"\n  → {len(recordings)} inspelningar inbäddade\n")
 
 REC_JSON = json.dumps([
     {'id': r['id'], 'fname_label': r['fname_label'], 'mime': r['mime'], 'size': r['size'], 'audio': r['audio'],
-     'lat': r['lat'], 'lon': r['lon']}
+     'lat': r['lat'], 'lon': r['lon'], 'sono': r['sono']}
     for r in recordings
 ], ensure_ascii=False)
 
@@ -252,8 +314,12 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-
 .player-type-badge.real{{background:rgba(79,168,232,0.15);color:var(--blue);border:1px solid var(--blue)}}
 .player-type-badge.synth{{background:rgba(240,168,50,0.15);color:var(--amber);border:1px solid var(--amber)}}
 .player-type-badge.danger{{background:rgba(232,85,85,0.15);color:var(--red);border:1px solid var(--red)}}
+.player-type-badge.field{{background:rgba(167,139,250,0.15);color:var(--purple);border:1px solid var(--purple)}}
 .player-title{{font-size:22px;font-weight:700;letter-spacing:-0.3px;text-align:center;margin-bottom:4px}}
-.player-sub{{font-size:13px;color:var(--t3);text-align:center;font-family:monospace;margin-bottom:28px}}
+.player-sub{{font-size:13px;color:var(--t3);text-align:center;font-family:monospace;margin-bottom:12px}}
+.sono-wrap{{position:relative;margin:0 0 16px;border-radius:8px;overflow:hidden;border:1px solid var(--border)}}
+.sono-wrap img{{width:100%;display:block}}
+.sono-playhead{{position:absolute;top:0;bottom:0;width:2px;background:var(--green);opacity:0.85;pointer-events:none;transform:translateX(0)}}
 
 /* Big play button */
 .big-play{{
@@ -1384,6 +1450,11 @@ input[type=range]::-webkit-slider-thumb{{
     <div class="player-title" id="playerTitle"></div>
     <div class="player-sub" id="playerSub"></div>
 
+    <div class="sono-wrap" id="sonoWrap" style="display:none">
+      <img id="sonoImg" alt="Spectrogram">
+      <div class="sono-playhead" id="sonoPlayhead"></div>
+    </div>
+
     <button class="big-play paused" id="bigPlay">
       <svg id="bigPlayIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
     </button>
@@ -1849,7 +1920,16 @@ const HELP={{
 <li><b>SYN</b> (amber) — Synthesized via Web Audio — no audio file needed</li>
 <li><b>XC</b> (blue) — Real field recordings from xeno-canto.org</li>
 <li><b>⚠</b> (red) — Alarm / danger calls — use with care near crows</li></ul>
-<p>Tap a row to open the player. Drag the <b>⠿</b> handle on the left to reorder rows — your order is saved automatically. Use the filter buttons above to show only one type.</p>`}},
+<p>Tap a row to open the player. Drag the <b>⠿</b> handle on the left to reorder rows — your order is saved automatically. Use the filter buttons above to show only one type.</p>
+<hr style="border-color:var(--border);margin:14px 0">
+<p><b>📱 Install on iPhone</b></p>
+<ol style="padding-left:18px;margin:8px 0">
+<li>Open this page in <b>Safari</b></li>
+<li>Tap the <b>Share</b> button <span style="font-family:monospace;background:var(--s2);padding:1px 5px;border-radius:4px">⎙</span> at the bottom of the screen</li>
+<li>Scroll down and tap <b>"Add to Home Screen"</b></li>
+<li>Name it <b>CrowTalk</b> → tap <b>Add</b></li>
+</ol>
+<p style="color:var(--t3);font-size:13px;margin-top:6px">The app works fully offline once installed — no internet required.</p>`}},
   record:{{title:'Record',body:`<p>Record crow sounds in the field with automatic GPS tagging.</p><ul>
 <li>Tap the red button to start / stop a recording</li>
 <li>After recording, set category, phonetics, and the crow's reaction</li>
@@ -1979,12 +2059,30 @@ function loadPlayerItem() {{
   if (item.danger) {{
     badge.textContent = '⚠️ Dangerous sound';
     badge.className   = 'player-type-badge danger';
+  }} else if (item.type === 'real') {{
+    badge.textContent = '🔵 Real recording';
+    badge.className   = 'player-type-badge real';
+  }} else if (item.type === 'field') {{
+    badge.textContent = '🎙 My recording';
+    badge.className   = 'player-type-badge field';
   }} else {{
-    badge.textContent = item.type === 'real' ? '🔵 Real recording' : '🟡 Synthetic';
-    badge.className   = 'player-type-badge ' + item.type;
+    badge.textContent = '🟡 Synthetic';
+    badge.className   = 'player-type-badge synth';
   }}
   document.getElementById('playerTitle').textContent = item.name;
   document.getElementById('playerSub').textContent   = item.sub;
+
+  // Spectrogram
+  const sonoWrap = document.getElementById('sonoWrap');
+  const sonoImg  = document.getElementById('sonoImg');
+  const sonoSrc  = item.type === 'real' ? item.audio?.sono : null;
+  if (sonoSrc) {{
+    sonoImg.src = 'data:image/png;base64,' + sonoSrc;
+    sonoWrap.style.display = 'block';
+    document.getElementById('sonoPlayhead').style.left = '0px';
+  }} else {{
+    sonoWrap.style.display = 'none';
+  }}
 
   // Big play button styling for danger sounds
   const bigPlay = document.getElementById('bigPlay');
@@ -2220,6 +2318,11 @@ function startProgTimer() {{
     document.getElementById('progFill').style.width = pct + '%';
     document.getElementById('progCur').textContent  = fmt(mainAudio.currentTime);
     document.getElementById('progDur').textContent  = fmt(mainAudio.duration);
+    // Animate spectrogram playhead
+    const sw = document.getElementById('sonoWrap');
+    if (sw && sw.style.display !== 'none') {{
+      document.getElementById('sonoPlayhead').style.left = pct + '%';
+    }}
   }}, 100);
 }}
 
