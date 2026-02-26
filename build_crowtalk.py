@@ -1733,6 +1733,11 @@ async function savePending() {{
 }}
 
 async function renderField() {{
+  if (!db) {{
+    document.getElementById('fieldList').innerHTML =
+      '<div class="empty-state">Storage not available in this browser context</div>';
+    return;
+  }}
   const recs=await dbGetAll('recordings');
   const list=document.getElementById('fieldList');
   document.getElementById('fieldCount').textContent=recs.length?recs.length+' saved':'';
@@ -1853,6 +1858,11 @@ async function saveDagbok() {{
 }}
 
 async function renderDagbok() {{
+  if (!db) {{
+    document.getElementById('dagbokList').innerHTML =
+      '<div class="empty-state">Storage not available in this browser context</div>';
+    return;
+  }}
   const entries = await dbGetAll('dagbok');
   const list = document.getElementById('dagbokList');
   document.getElementById('dagbokCount').textContent = entries.length ? entries.length + ' entries' : '';
@@ -1891,8 +1901,8 @@ async function deleteDagbok(id) {{
 // DATA TAB
 // ═══════════════════════════════════════════════════════════════════
 async function renderData() {{
-  const fieldRecs  = await dbGetAll('recordings');
-  const dagbokRecs = await dbGetAll('dagbok');
+  const fieldRecs  = db ? await dbGetAll('recordings') : [];
+  const dagbokRecs = db ? await dbGetAll('dagbok') : [];
   const lbl = getLabels();
   const libLabeled = Object.values(lbl).filter(l=>l.category).length;
   const tally={{}};
@@ -1949,13 +1959,28 @@ function fmt(s) {{
 // INIT
 // ═══════════════════════════════════════════════════════════════════
 async function init() {{
-  await openDB();
-  renderFilterBar();
-  renderSoundList();
-  initDagbokForm();
-  document.getElementById('topSub').textContent = `Corvus cornix · ${{RECORDINGS.length}} XC · ${{SYNTH_DEMOS.length}} synthetic`;
+  // IndexedDB is optional – Library/Theory work without it.
+  // Wrap separately so a DB failure never blocks the sound list.
+  try {{
+    await openDB();
+  }} catch(e) {{
+    console.warn('IndexedDB unavailable (private mode or blocked):', e);
+    // db remains undefined; field recording / journal tabs will be disabled
+  }}
+  try {{
+    renderFilterBar();
+    renderSoundList();
+    initDagbokForm();
+    document.getElementById('topSub').textContent =
+      `Corvus cornix · ${{RECORDINGS.length}} XC · ${{SYNTH_DEMOS.length}} synthetic`;
+  }} catch(e) {{
+    console.error('Render failed:', e);
+    const list = document.getElementById('soundList');
+    if (list) list.innerHTML =
+      `<div class="empty-state" style="color:#f87171;padding:24px">⚠ Load error: ${{e.message}}</div>`;
+  }}
 }}
-init();
+init().catch(e => console.error('init rejected:', e));
 </script>
 </body>
 </html>"""
