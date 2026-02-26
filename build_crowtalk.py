@@ -203,6 +203,18 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-
 .help-body p{{font-size:14px;color:var(--t2);line-height:1.6;margin-bottom:10px}}
 .help-body ul{{margin:0 0 10px 18px;font-size:14px;color:var(--t2);line-height:1.9}}
 .help-body b{{color:var(--t1)}}
+/* ── CONTEXT PANEL ──────────────────────────────────────────────── */
+.ctx-panel{{padding:10px 12px 0;border-bottom:1px solid var(--border);background:var(--bg)}}
+.ctx-row{{display:flex;align-items:center;gap:8px;margin-bottom:8px}}
+.ctx-mode-btn{{flex:1;padding:7px 6px;border-radius:8px;border:1.5px solid var(--border);background:var(--s2);color:var(--t3);font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:all 0.15s}}
+.ctx-mode-btn.home.active{{border-color:var(--green);background:rgba(62,207,114,0.12);color:var(--green)}}
+.ctx-mode-btn.new-t.active{{border-color:var(--purple);background:rgba(167,139,250,0.12);color:var(--purple)}}
+.ctx-time-badge{{font-size:11px;padding:3px 8px;border-radius:8px;background:var(--s2);border:1px solid var(--border);color:var(--t3);white-space:nowrap;flex-shrink:0}}
+.ctx-season{{font-size:11px;color:var(--t3);flex:1}}
+.ctx-tip{{font-size:12px;color:var(--t2);background:var(--s2);border-radius:8px;padding:8px 10px;line-height:1.5;margin-bottom:10px;border-left:3px solid var(--border)}}
+.ctx-tip.home{{border-left-color:var(--green)}}
+.ctx-tip.new-t{{border-left-color:var(--purple)}}
+.ctx-tip.caution{{border-left-color:var(--amber)}}
 
 /* ── FIELD PLAYER OVERLAY ───────────────────────────────────────── */
 .player-overlay{{
@@ -590,6 +602,8 @@ input[type=range]::-webkit-slider-thumb{{
     <span class="offline-badge">OFFLINE</span>
     <button class="help-btn" onclick="showHelp()">?</button>
   </div>
+
+  <div id="ctxPanel" class="ctx-panel" style="display:none"></div>
 
   <div class="help-overlay" id="helpOverlay" style="display:none" onclick="closeHelp()">
     <div class="help-sheet" onclick="event.stopPropagation()">
@@ -1104,6 +1118,88 @@ input[type=range]::-webkit-slider-thumb{{
         </div>
 
         <div class="teori-section">
+          <div class="teori-h1">🏠 Territory &amp; trust — why your mode matters for the crow</div>
+          <div class="science-box">
+            <p>Hooded crows divide the world into known individuals and strangers. When a crow classifies you as "safe", that assessment is stored permanently — and shared with their mate and nearby flock members. The reverse is equally true. The mode you choose in this app affects which sounds and behaviours are appropriate, not just for your own safety but for the crow's social world.</p>
+          </div>
+          <div class="teori-h2">Home Quarter</div>
+          <div class="tip-box">
+            <p>You and the local crows have reached an implicit agreement: <em>you bring food, you are not a threat, you behave predictably.</em> From the crow's perspective this is a genuine social relationship. They can read your body language. They notice if you're anxious, distracted, or aggressive. Mirror their communication — contact calls answered with contact calls, silence answered with silence — and the relationship deepens over time.</p>
+            <p><strong>Key insight:</strong> The crows in your home quarter are not simply tolerating you. They are actively managing a relationship with a predictable resource partner. You have become part of their cognitive map — a named, remembered individual in their social network.</p>
+          </div>
+          <div class="teori-h2">New Territory</div>
+          <div class="tip-box">
+            <p>Entering a new territory means the resident crows must classify you from scratch. <em>Threat or neutral?</em> This assessment takes seconds. First impressions compound — a single alarm response means all crows present form a threat memory of your face and voice that can persist for years and will spread through the flock via social learning.</p>
+            <p><strong>Key insight:</strong> Never play alarm or mobbing calls in a new territory. Even if the crows don't react visibly, the negative association is being formed in their memory. Start with passive presence only, then — if they approach neutrally — a single soft contact call. Give the crows time to classify you correctly: as a harmless observer.</p>
+            <p><strong>From the crow's perspective:</strong> A strange human who makes crow alarm sounds near a nest site is the precise behavioural signature of a predator. That threat profile will be shared across the local flock rapidly.</p>
+          </div>
+        </div>
+
+        <div class="teori-section">
+          <div class="teori-h1">🕐 Time of day — daily cycle &amp; the evening roost</div>
+          <div class="teori-h2">Daily rhythm</div>
+          <div class="science-box">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;line-height:1.7">
+              <tr style="color:var(--t3)"><td style="padding:3px 0;font-weight:600;white-space:nowrap">Time</td><td style="padding:3px 8px;font-weight:600">Phase</td><td style="padding:3px 0;font-weight:600">Behaviour &amp; recommendation</td></tr>
+              <tr><td style="color:var(--t3);white-space:nowrap">05–08</td><td style="padding:2px 8px">🌅 Dawn</td><td>Peak vocality, territorial. Best time for contact calls — crows are alert and responsive.</td></tr>
+              <tr><td style="color:var(--t3)">08–12</td><td style="padding:2px 8px">☀️ Morning</td><td>Active foraging and social interaction. Good window for building contact in home quarter.</td></tr>
+              <tr><td style="color:var(--t3)">12–15</td><td style="padding:2px 8px">🌤 Midday</td><td>Lower activity, resting and preening. Minimal response to calls. Passive observation only.</td></tr>
+              <tr><td style="color:var(--t3)">15–18</td><td style="padding:2px 8px">🌇 Afternoon</td><td>Pre-roost foraging intensifies. Food calls effective. Crows are motivated and focused.</td></tr>
+              <tr><td style="color:var(--t3)">18–21</td><td style="padding:2px 8px">🌆 Evening</td><td>Communal roost flight. Observe only — see below.</td></tr>
+              <tr><td style="color:var(--t3)">21–05</td><td style="padding:2px 8px">🌙 Night</td><td>Roosting. Crows are silent unless disturbed. No field activity recommended.</td></tr>
+            </table>
+          </div>
+          <div class="teori-h2">Evening roost movement</div>
+          <div class="science-box">
+            <p>In autumn and winter, Hooded Crows from a large area converge each evening on communal roost sites — sometimes thousands of birds. This movement is not random: it follows established flight corridors and is organised by experienced individuals who know the safe routes and roost locations.</p>
+            <p>Younger birds (juveniles and first-year crows) are <strong>escorted</strong> by older, experienced birds. You can observe this as a mixture of confident, direct fliers (adults — larger body, more purposeful wingbeats) and smaller, less certain birds following the stream. The escort relationship is how younger generations learn the roost locations, safe flight corridors, and social rules of the broader population. This is active cultural transmission — knowledge passed between individuals, not hardwired instinct.</p>
+            <p>During roost movement, crows are collectively vigilant. Any disturbance — including unusual human sounds — can panic the entire stream. If a location causes repeated disturbances, crows will begin to route around it.</p>
+          </div>
+          <div class="tip-box">
+            <p><strong>Observer tip:</strong> Stand still, be silent, and watch the stream overhead. You can identify experienced adults by their larger body size, more deliberate wingbeats, and their position at the front or flanks of the stream — they are guiding. Juveniles tend to fly in the centre or rear, following the leaders. The constant calling during roost flight ("recruiting calls") is how the flock stays coherent across a wide area. It is one of the most impressive things you can witness in urban bird life.</p>
+          </div>
+        </div>
+
+        <div class="teori-section">
+          <div class="teori-h1">📏 Estimating crow age — size matters</div>
+          <div class="science-box">
+            <p>Hooded Crows approach adult size by their first autumn, but body mass and structural robustness continue to develop over 2–3 years. In the field, <strong>larger individuals are almost always older</strong> — and older means more experienced, higher social status, and more likely to be a territory holder.</p>
+          </div>
+          <div class="teori-h2">Field markers</div>
+          <div class="guide-step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <div class="step-title">Body size &amp; bill thickness</div>
+              <div class="step-desc">A noticeably large, heavy-chested crow with a thick bill is almost certainly an adult (2+ years) and likely a territory holder. These individuals move with deliberate confidence — they have earned their status and know it.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <div class="step-title">Plumage contrast</div>
+              <div class="step-desc">Adult crows (after their first full moult at ~14 months) have clean, iridescent black feathers with crisp contrast against the grey body. Juveniles often have duller, slightly brownish-tinged feathers, especially on the crown and wings.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <div class="step-title">Eye colour</div>
+              <div class="step-desc">Juvenile Hooded Crows have a pale, bluish-grey iris. Adults develop a dark brown to near-black iris. Visible at close range and a reliable age marker when combined with other features.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <div class="step-title">Behavioural confidence</div>
+              <div class="step-desc">Older crows hold their ground longer, approach more directly, and leave more slowly. Juveniles are more erratic and easily startled, and defer to older individuals at food sources. If a crow stays calm as you approach, it is likely older.</div>
+            </div>
+          </div>
+          <div class="tip-box">
+            <p><strong>Social significance:</strong> When a large, confident crow approaches you in a new territory, it is almost certainly the dominant individual or one of the resident pair. How it reacts to you — and how you respond — sets the template for every crow in the area. This bird is also likely actively teaching younger birds how to assess you. Its response will propagate through the local social network within hours. Be calm, make no sudden movements. If you play a sound at all, make it a single, soft contact call.</p>
+          </div>
+        </div>
+
+        <div class="teori-section">
           <div class="teori-h1">🔗 External resources</div>
           <div class="stat-card" style="padding:12px 14px">
             <div class="ref-item" style="margin-bottom:10px">
@@ -1480,6 +1576,7 @@ function toggleMonth(id) {{
 // ═══════════════════════════════════════════════════════════════════
 function switchTab(name) {{
   activeTab = name;
+  renderContextPanel();
   stopMain();
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
@@ -1621,6 +1718,69 @@ function performDrop(fromIdx,toIdx){{
   all.splice(toAllIdx,0,moved);
   saveCustomOrder(all.map(x=>x.id));
   renderSoundList();
+}}
+
+// ── Context panel (Territory × Time × Season) ──────────────────────────
+function getTerritoryMode(){{return localStorage.getItem('territory')||'home';}}
+function setTerritoryMode(m){{localStorage.setItem('territory',m);renderContextPanel();}}
+
+function getTimeOfDay(){{
+  const h=new Date().getHours();
+  if(h>=5&&h<8)   return{{id:'dawn',     label:'🌅 Dawn',          note:'High activity — territorial'}};
+  if(h>=8&&h<12)  return{{id:'morning',  label:'☀️ Morning',       note:'Foraging & social contact'}};
+  if(h>=12&&h<15) return{{id:'midday',   label:'🌤 Midday',        note:'Rest period — quieter'}};
+  if(h>=15&&h<18) return{{id:'afternoon',label:'🌇 Afternoon',     note:'Pre-roost foraging'}};
+  if(h>=18&&h<21) return{{id:'evening',  label:'🌆 Evening roost', note:'Mass flight to communal roost'}};
+  return                 {{id:'night',   label:'🌙 Night',         note:'Roosting'}};
+}}
+function getSeason(){{
+  const m=new Date().getMonth();
+  if(m<=1||m===11)return{{label:'❄️ Winter',note:'Cooperative flocking, resource scarcity'}};
+  if(m<=3)        return{{label:'🌱 Spring',note:'Territory establishment & pair bonding'}};
+  if(m<=7)        return{{label:'🌿 Summer',note:'Breeding & juvenile training'}};
+  return                {{label:'🍂 Autumn',note:'Juvenile social learning'}};
+}}
+
+const CTX_TIPS={{
+  home:{{
+    dawn:     {{tip:"Your regulars are active. Contact calls work well — you're a known face. Match their morning energy.",cls:'home'}},
+    morning:  {{tip:"Established trust allows closer interaction. Mirror their contact calls to reinforce the bond.",cls:'home'}},
+    midday:   {{tip:"Lower activity. Good time to offer food quietly — no sounds needed.",cls:'home'}},
+    afternoon:{{tip:"Pre-roost foraging. Food calls are effective. Your crows know the reward signal.",cls:'home'}},
+    evening:  {{tip:"⚠ Your home crows join the evening roost flight. Stay passive and watch — don't disrupt the movement.",cls:'caution'}},
+    night:    {{tip:"Crows are roosting. Field work not recommended until dawn.",cls:''}},
+  }},
+  new:{{
+    dawn:     {{tip:"Unknown territory. Stay completely passive. Let the crows notice you first — no sounds yet.",cls:'new-t'}},
+    morning:  {{tip:"Assess the local birds before playing anything. If they approach neutrally, try one soft contact call.",cls:'new-t'}},
+    midday:   {{tip:"Quiet period — ideal for passive observation. Watch the social hierarchy and dominant individuals.",cls:'new-t'}},
+    afternoon:{{tip:"If no alarm response so far, try one gentle contact call. Watch body posture carefully.",cls:'new-t'}},
+    evening:  {{tip:"⚠ Strangers near a communal roost can panic the entire flock. Observe only — absolutely no sounds.",cls:'caution'}},
+    night:    {{tip:"Crows are roosting. Come back at dawn.",cls:''}},
+  }},
+}};
+
+function renderContextPanel(){{
+  const el=document.getElementById('ctxPanel');
+  if(!el) return;
+  const show=(activeTab==='library'||activeTab==='record');
+  el.style.display=show?'block':'none';
+  if(!show) return;
+  const mode=getTerritoryMode();
+  const time=getTimeOfDay();
+  const season=getSeason();
+  const tipData=(CTX_TIPS[mode]||{{}})[time.id]||{{tip:'',cls:''}};
+  el.innerHTML=`
+    <div class="ctx-row">
+      <button class="ctx-mode-btn home ${{mode==='home'?'active':''}}" onclick="setTerritoryMode('home')">🏠 Home Quarter</button>
+      <button class="ctx-mode-btn new-t ${{mode==='new'?'active':''}}" onclick="setTerritoryMode('new')">🌲 New Territory</button>
+      <span class="ctx-time-badge" title="${{time.note}}">${{time.label}}</span>
+    </div>
+    <div class="ctx-row" style="margin-top:-4px;margin-bottom:${{tipData.tip?'4px':'10px'}}">
+      <span class="ctx-season">${{season.label}} · ${{season.note}}</span>
+    </div>
+    ${{tipData.tip?`<div class="ctx-tip ${{tipData.cls}}">${{tipData.tip}}</div>`:''}}
+  `;
 }}
 
 // ── Help system ────────────────────────────────────────────────────────
@@ -2506,6 +2666,7 @@ async function init() {{
     // db remains undefined; field recording / journal tabs will be disabled
   }}
   try {{
+    renderContextPanel();
     renderFilterBar();
     renderSoundList();
     initDagbokForm();
