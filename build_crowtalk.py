@@ -439,6 +439,14 @@ input[type=range]::-webkit-slider-thumb{{
   width:100%;padding:12px;border-radius:10px;border:none;
   background:var(--green);color:#000;font-size:14px;font-weight:600;cursor:pointer
 }}
+.terr-toggle{{display:flex;gap:4px;flex:1}}
+.terr-btn{{flex:1;padding:7px 4px;border-radius:8px;border:1.5px solid var(--border);background:var(--s2);color:var(--t2);font-size:12px;cursor:pointer;transition:all .15s;white-space:nowrap}}
+.terr-btn.home.active{{border-color:var(--green);background:rgba(62,207,114,0.12);color:var(--green)}}
+.terr-btn.new-t.active{{border-color:var(--purple);background:rgba(167,139,250,0.12);color:var(--purple)}}
+.hq-display{{display:flex;align-items:center;gap:8px;padding:4px 0 8px;min-height:32px}}
+.hq-name-lbl{{font-size:14px;color:var(--t1);font-weight:500;flex:1}}
+.hq-name-lbl.empty{{color:var(--t3);font-style:italic;font-size:12px}}
+.hq-edit-btn{{padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--s2);color:var(--t2);font-size:11px;cursor:pointer;white-space:nowrap}}
 /* journal entry list */
 .journal-entry{{
   background:var(--s1);border:1px solid var(--border);border-radius:12px;
@@ -661,8 +669,16 @@ input[type=range]::-webkit-slider-thumb{{
           <div class="dagbok-form-title">New journal entry</div>
           <div class="form-row">
             <input class="form-input" id="dbDate" type="date" style="flex:none;width:150px">
-            <input class="form-input" id="dbPlace" type="text" placeholder="Location / area...">
+            <div class="terr-toggle">
+              <button class="terr-btn home active" id="terrHome" onclick="setJournalMode('home')">🏠 Home Quarter</button>
+              <button class="terr-btn new-t" id="terrNew" onclick="setJournalMode('new')">🌲 New Territory</button>
+            </div>
           </div>
+          <div class="hq-display" id="hqDisplay">
+            <span id="hqNameLbl" class="hq-name-lbl empty">(No Home Quarter set)</span>
+            <button class="hq-edit-btn" onclick="promptSetHQ()">✏️ Set HQ</button>
+          </div>
+          <input class="form-input" id="dbPlace" type="text" placeholder="Territory name / area..." style="display:none;margin-bottom:8px">
           <div style="font-size:11px;color:var(--t3);margin-bottom:6px">Weather</div>
           <div class="weather-row" id="weatherRow">
             <button class="weather-btn" data-w="☀️">☀️</button>
@@ -2504,6 +2520,32 @@ async function deleteField(id){{stopField();await dbDelete('recordings',id);rend
 let selectedWeather = '';
 let selectedActivities = new Set();
 
+// Home Quarter helpers
+function getHQName(){{return localStorage.getItem('hq_name')||'';}}
+function getJournalMode(){{return localStorage.getItem('journalMode')||'home';}}
+function setJournalMode(m){{
+  localStorage.setItem('journalMode',m);
+  const isHome=m==='home';
+  document.getElementById('hqDisplay').style.display=isHome?'flex':'none';
+  document.getElementById('dbPlace').style.display=isHome?'none':'block';
+  document.getElementById('terrHome').classList.toggle('active',isHome);
+  document.getElementById('terrNew').classList.toggle('active',!isHome);
+  const hq=getHQName();
+  const lbl=document.getElementById('hqNameLbl');
+  if(isHome){{
+    lbl.textContent=hq||'(No Home Quarter set — tap ✏️ to set)';
+    lbl.className=hq?'hq-name-lbl':'hq-name-lbl empty';
+  }}
+}}
+function promptSetHQ(){{
+  const cur=getHQName();
+  const val=prompt('Enter your Home Quarter name / location:',cur);
+  if(val!==null){{
+    localStorage.setItem('hq_name',val.trim());
+    setJournalMode('home');
+  }}
+}}
+
 // Init date to today
 function initDagbokForm() {{
   const d = document.getElementById('dbDate');
@@ -2531,11 +2573,15 @@ function initDagbokForm() {{
       }}
     }});
   }});
+
+  // Territory mode
+  setJournalMode(getJournalMode());
 }}
 
 async function saveDagbok() {{
   const date   = document.getElementById('dbDate').value;
-  const place  = document.getElementById('dbPlace').value.trim();
+  const jMode  = getJournalMode();
+  const place  = jMode==='home' ? getHQName() : document.getElementById('dbPlace').value.trim();
   const notes  = document.getElementById('dbNotes').value.trim();
   if (!place && !notes && !selectedActivities.size) {{
     alert('Please enter at least a location, activity, or note.');
@@ -2549,6 +2595,7 @@ async function saveDagbok() {{
   // Reset form
   document.getElementById('dbPlace').value = '';
   document.getElementById('dbNotes').value = '';
+  setJournalMode('home');
   document.querySelectorAll('.weather-btn').forEach(b=>b.classList.remove('on'));
   document.querySelectorAll('.activity-chip').forEach(b=>b.classList.remove('on'));
   selectedWeather = ''; selectedActivities.clear();
