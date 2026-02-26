@@ -539,7 +539,7 @@ input[type=range]::-webkit-slider-thumb{{
     <!-- ══ TAB: BIBLIOTEK ══════════════════════════════════════════ -->
     <div class="tab active" id="tab-library">
       <div class="filter-bar" id="filterBar"></div>
-      <div class="sound-list" id="soundList"></div>
+      <div class="sound-list" id="soundList"><div class="empty-state" style="padding:24px;text-align:center;opacity:.5">Loading sounds…</div></div>
     </div>
 
     <!-- ══ TAB: SPELA IN ══════════════════════════════════════════ -->
