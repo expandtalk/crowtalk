@@ -7,7 +7,7 @@ import base64, os, json
 
 _HERE     = os.path.dirname(os.path.abspath(__file__))
 AUDIO_DIR = os.path.join(_HERE, "ljud")
-OUTPUT    = os.path.join(_HERE, "CrowTalk_App.html")
+OUTPUT    = os.path.join(_HERE, "index.html")
 MAX_SIZE  = 6 * 1024 * 1024
 
 print("🔊 Laddar ljudfiler...")
@@ -406,6 +406,30 @@ input[type=range]::-webkit-slider-thumb{{
 .journal-sec{{padding:12px 12px 4px;display:flex;align-items:center;justify-content:space-between}}
 .journal-sec-title{{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--t3)}}
 
+/* ── JOURNAL SUB-NAV ────────────────────────────────────────────── */
+.journal-subnav{{display:flex;gap:6px;padding:10px 12px 0;background:var(--bg)}}
+.jnav-btn{{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--s1);color:var(--t2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}}
+.jnav-btn.active{{background:var(--gdim);border-color:var(--green);color:var(--green)}}
+.journal-view{{display:none}}.journal-view.active{{display:block}}
+
+/* ── MONTHLY CALENDAR ───────────────────────────────────────────── */
+.month-list{{padding:10px 12px 24px}}
+.month-card{{background:var(--s1);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden}}
+.month-header{{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none}}
+.month-icon{{font-size:22px;width:32px;text-align:center;flex-shrink:0}}
+.month-title{{font-weight:700;font-size:14px;color:var(--t1);flex:1}}
+.month-subtitle{{font-size:11px;color:var(--t3)}}
+.month-chevron{{color:var(--t3);font-size:14px;transition:transform .2s;flex-shrink:0}}
+.month-card.open .month-chevron{{transform:rotate(180deg)}}
+.month-body{{display:none;padding:0 14px 14px;border-top:1px solid var(--border)}}
+.month-card.open .month-body{{display:block}}
+.month-body p{{font-size:13px;color:var(--t2);line-height:1.6;margin:10px 0 6px}}
+.month-obs{{background:var(--s2);border-radius:8px;padding:10px 12px;margin-top:8px}}
+.month-obs-title{{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3);margin-bottom:6px}}
+.month-obs-item{{display:flex;gap:8px;font-size:12px;color:var(--t2);margin-bottom:4px;line-height:1.5}}
+.month-obs-item:last-child{{margin-bottom:0}}
+.month-obs-dot{{color:var(--green);flex-shrink:0;margin-top:2px}}
+
 /* ── DATA TAB ───────────────────────────────────────────────────── */
 .stat-card{{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px}}
 .stat-title{{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:14px}}
@@ -569,43 +593,292 @@ input[type=range]::-webkit-slider-thumb{{
 
     <!-- ══ TAB: DAGBOK ═════════════════════════════════════════════ -->
     <div class="tab" id="tab-dagbok">
-      <div class="dagbok-form">
-        <div class="dagbok-form-title">New journal entry</div>
-        <div class="form-row">
-          <input class="form-input" id="dbDate" type="date" style="flex:none;width:150px">
-          <input class="form-input" id="dbPlace" type="text" placeholder="Location / area...">
-        </div>
-        <div style="font-size:11px;color:var(--t3);margin-bottom:6px">Weather</div>
-        <div class="weather-row" id="weatherRow">
-          <button class="weather-btn" data-w="☀️">☀️</button>
-          <button class="weather-btn" data-w="🌤️">🌤️</button>
-          <button class="weather-btn" data-w="⛅">⛅</button>
-          <button class="weather-btn" data-w="🌧️">🌧️</button>
-          <button class="weather-btn" data-w="🌩️">🌩️</button>
-          <button class="weather-btn" data-w="❄️">❄️</button>
-          <button class="weather-btn" data-w="🌫️">🌫️</button>
-        </div>
-        <div style="font-size:11px;color:var(--t3);margin-bottom:6px">What happened?</div>
-        <div class="activity-row" id="activityRow">
-          <button class="activity-chip" data-a="Offered food">Offered food</button>
-          <button class="activity-chip" data-a="Got response">Got response</button>
-          <button class="activity-chip" data-a="Got gift">Got gift 🎁</button>
-          <button class="activity-chip" data-a="Contact established">Contact established</button>
-          <button class="activity-chip" data-a="Played sound">Played sound</button>
-          <button class="activity-chip" data-a="Mobbing incident">Mobbing incident</button>
-          <button class="activity-chip" data-a="Responded to call">Responded to call</button>
-          <button class="activity-chip" data-a="No response">No response</button>
-        </div>
-        <textarea class="form-input" id="dbNotes" placeholder="Observations, behaviours, number of crows, notable events..." rows="3" style="width:100%;margin-bottom:10px;resize:none"></textarea>
-        <button class="dagbok-save-btn" onclick="saveDagbok()">Save entry</button>
+      <div class="journal-subnav">
+        <button class="jnav-btn active" id="jnav-log" onclick="switchJournalView('log')">📝 Log Entry</button>
+        <button class="jnav-btn" id="jnav-cal" onclick="switchJournalView('cal')">📅 Monthly Calendar</button>
       </div>
-      <div class="journal-sec">
-        <span class="journal-sec-title">Journal</span>
-        <span id="dagbokCount" style="font-size:11px;color:var(--t3);font-family:monospace"></span>
+
+      <!-- VIEW: Log Entry -->
+      <div class="journal-view active" id="jview-log">
+        <div class="dagbok-form">
+          <div class="dagbok-form-title">New journal entry</div>
+          <div class="form-row">
+            <input class="form-input" id="dbDate" type="date" style="flex:none;width:150px">
+            <input class="form-input" id="dbPlace" type="text" placeholder="Location / area...">
+          </div>
+          <div style="font-size:11px;color:var(--t3);margin-bottom:6px">Weather</div>
+          <div class="weather-row" id="weatherRow">
+            <button class="weather-btn" data-w="☀️">☀️</button>
+            <button class="weather-btn" data-w="🌤️">🌤️</button>
+            <button class="weather-btn" data-w="⛅">⛅</button>
+            <button class="weather-btn" data-w="🌧️">🌧️</button>
+            <button class="weather-btn" data-w="🌩️">🌩️</button>
+            <button class="weather-btn" data-w="❄️">❄️</button>
+            <button class="weather-btn" data-w="🌫️">🌫️</button>
+          </div>
+          <div style="font-size:11px;color:var(--t3);margin-bottom:6px">What happened?</div>
+          <div class="activity-row" id="activityRow">
+            <button class="activity-chip" data-a="Offered food">Offered food</button>
+            <button class="activity-chip" data-a="Got response">Got response</button>
+            <button class="activity-chip" data-a="Got gift">Got gift 🎁</button>
+            <button class="activity-chip" data-a="Contact established">Contact established</button>
+            <button class="activity-chip" data-a="Played sound">Played sound</button>
+            <button class="activity-chip" data-a="Mobbing incident">Mobbing incident</button>
+            <button class="activity-chip" data-a="Responded to call">Responded to call</button>
+            <button class="activity-chip" data-a="No response">No response</button>
+          </div>
+          <textarea class="form-input" id="dbNotes" placeholder="Observations, behaviours, number of crows, notable events..." rows="3" style="width:100%;margin-bottom:10px;resize:none"></textarea>
+          <button class="dagbok-save-btn" onclick="saveDagbok()">Save entry</button>
+        </div>
+        <div class="journal-sec">
+          <span class="journal-sec-title">Journal</span>
+          <span id="dagbokCount" style="font-size:11px;color:var(--t3);font-family:monospace"></span>
+        </div>
+        <div id="dagbokList">
+          <div class="empty-state" style="padding:32px 16px">No entries yet</div>
+        </div>
       </div>
-      <div id="dagbokList">
-        <div class="empty-state" style="padding:32px 16px">No entries yet</div>
-      </div>
+
+      <!-- VIEW: Monthly Calendar -->
+      <div class="journal-view" id="jview-cal">
+        <div class="month-list">
+          <div class="teori-h1" style="padding:10px 2px 12px;font-size:13px;color:var(--t3)">What to observe month by month — Hooded Crow in suburban Stockholm</div>
+
+          <!-- JANUARY -->
+          <div class="month-card" id="mc-jan">
+            <div class="month-header" onclick="toggleMonth('mc-jan')">
+              <div class="month-icon">❄️</div>
+              <div><div class="month-title">January</div><div class="month-subtitle">Winter flocking · food dependency</div></div>
+              <div class="month-chevron">▼</div>
+            </div>
+            <div class="month-body">
+              <p>Crows gather in larger groups for winter protection. Deep snow covers natural food, making them more dependent on supplementary feeding. A core family group of 12–13 individuals may adopt a regular feeder as part of their territory — numbers can swell to ~30 when neighbouring crows join.</p>
+              <div class="month-obs">
+                <div class="month-obs-title">What to watch for</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Large mixed flocks (crows + jackdaws) in open areas</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Cooperative foraging — individuals signal food finds to the group</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Crows flying to greet you when you appear with food</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Pair bonds visible even within the flock</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FEBRUARY -->
+          <div class="month-card" id="mc-feb">
+            <div class="month-header" onclick="toggleMonth('mc-feb')">
+              <div class="month-icon">🌨️</div>
+              <div><div class="month-title">February</div><div class="month-subtitle">Pre-spring restlessness · hierarchy visible</div></div>
+              <div class="month-chevron">▼</div>
+            </div>
+            <div class="month-body">
+              <p>Large flocks of crows and jackdaws cross the sky — increased activity despite remaining snow and cold. A clear hierarchy becomes visible: older, larger crows act as "group leaders" deep in the forest, signalling which direction the flock should fly when food is found. Territory thinking begins to form.</p>
+              <div class="month-obs">
+                <div class="month-obs-title">What to watch for</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Directed flock movements — follow a lead bird from a forest edge</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Pairs beginning to separate slightly from the main flock</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Increased vocalisation near potential nesting sites</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>First signs of courtship: bowing, preening each other</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MARCH -->
+          <div class="month-card" id="mc-mar">
+            <div class="month-header" onclick="toggleMonth('mc-mar')">
+              <div class="month-icon">💨</div>
+              <div><div class="month-title">March</div><div class="month-subtitle">Nest building · storm flying</div></div>
+              <div class="month-chevron">▼</div>
+            </div>
+            <div class="month-body">
+              <p>First signs of spring. Storms become a playground — crows use strong winds for acrobatic flying, sometimes in pairs, sometimes in groups. Their flight over open fields looks like a dance. Flock sizes decrease as pairs establish territories. Food caching becomes more frequent as individuals compete.</p>
+              <p>Late March: nest construction begins. Pairs select a tree, often at height, and start building. In Årsta, one pair nests at 6th-floor height, visible from an 8th-floor apartment.</p>
+              <div class="month-obs">
+                <div class="month-obs-title">What to watch for</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Acrobatic flying in wind — barrel rolls, sudden dives</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Pairs carrying sticks and twigs to nest sites</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Food caching: crow buries excess food, smooths surface with bill</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Smaller groups — territorial pairs dispersing</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- APRIL -->
+          <div class="month-card" id="mc-apr">
+            <div class="month-header" onclick="toggleMonth('mc-apr')">
+              <div class="month-icon">🌸</div>
+              <div><div class="month-title">April</div><div class="month-subtitle">Incubation begins · interspecies conflict</div></div>
+              <div class="month-chevron">▼</div>
+            </div>
+            <div class="month-body">
+              <p>Crows are seen in established pairs. Females sit tight on the nest, resting heavily before egg laying. Multiple nests visible in neighbourhood trees. Other species become aggressive: fieldfares (björktrastar) defend territory against crows and will dive-bomb them — sometimes in coordinated attacks. Ravens appear sporadically and displace local crows from their territory.</p>
+              <div class="month-obs">
+                <div class="month-obs-title">What to watch for</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Female sitting low on nest, barely visible</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Male foraging alone and returning to the nest area</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Fieldfare attacks on crows — watch crows crouch and flee</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Crows escorting ravens out of territory</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MAY -->
+          <div class="month-card" id="mc-may">
+            <div class="month-header" onclick="toggleMonth('mc-may')">
+              <div class="month-icon">🌿</div>
+              <div><div class="month-title">May</div><div class="month-subtitle">Hatching · chick care</div></div>
+              <div class="month-chevron">▼</div>
+            </div>
+            <div class="month-body">
+              <p>Large winter flocks are gone. Pairs focus on their own family and territory. Early May: first chicks hatch. The female broods while the male forages. Eggs: up to 6, pale blue-green with liver-brown spots, ~45×30 mm. Warning calls (3 fast calls) sound when a fox, crow or raptor approaches the nest.</p>
+              <p>Gulls and herring gulls become the primary aerial threat in the upper airspace during this period.</p>
+              <div class="month-obs">
+                <div class="month-obs-title">What to watch for</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Male making multiple food trips per hour</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Female rarely leaving the nest</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>3-call alarm (rapid KRA-KRA-KRA) when predators appear</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Only one crow from the pair visible at a time near the nest</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- JUNE -->
+          <div class="month-card" id="mc-jun">
+            <div class="month-header" onclick="toggleMonth('mc-jun')">
+              <div class="month-icon">☀️</div>
+              <div><div class="month-title">June</div><div class="month-subtitle">Fledglings · first flight</div></div>
+              <div class="month-chevron">▼</div>
+            </div>
+            <div class="month-body">
+              <p>Around June 1, the first fledglings leave the nest. They are already large but cannot fly — they jump on the ground and cling to bicycles and fences. Juveniles are recognisable: duller plumage, slightly lighter, softer bill, blue eyes and swollen gape corners. They beg loudly with raised wings when a parent approaches.</p>
+              <p>By day 9, a chick may fly 10 metres up into a tree. The male grows bolder, following the observer further from the nest. Both parents feed young. Tragically, traffic and gull attacks take some fledglings.</p>
+              <div class="month-obs">
+                <div class="month-obs-title">What to watch for</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Juvenile: blue eyes, pink gape, wobbly posture</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Begging call — high-pitched, loud, constant</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Parent caching food 20 m away for later retrieval</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Both parents calling (4 soft calls) after feeding — contentment</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Magpies and gulls hunting fieldfare chicks nearby</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- JULY -->
+          <div class="month-card" id="mc-jul">
+            <div class="month-header" onclick="toggleMonth('mc-jul')">
+              <div class="month-icon">🌞</div>
+              <div><div class="month-title">July</div><div class="month-subtitle">Summer dispersal · teaching</div></div>
+              <div class="month-chevron">▼</div>
+            </div>
+            <div class="month-body">
+              <p>Crows seem to disappear during daytime. Activity shifts to early morning (from ~06:00). Juveniles are still with parents, being taught foraging and territory skills. The family may range more widely now that chicks can fly. Historically reported that some crow populations move toward Åland and the islands in summer — hard to verify.</p>
+              <div class="month-obs">
+                <div class="month-obs-title">What to watch for</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Juveniles following parents — still begging but less insistently</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Family groups of 4–5 birds moving together</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Best observation window: early morning, same spot daily</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>One juvenile may be slower to develop than siblings</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AUGUST -->
+          <div class="month-card" id="mc-aug">
+            <div class="month-header" onclick="toggleMonth('mc-aug')">
+              <div class="month-icon">🍒</div>
+              <div><div class="month-title">August</div><div class="month-subtitle">Juvenile independence · pre-autumn</div></div>
+              <div class="month-chevron">▼</div>
+            </div>
+            <div class="month-body">
+              <p>Continued development of juveniles. Late berries, insects and small animals provide ideal training prey. Parents demonstrate tool use, food handling and caching. The juvenile grows gradually more independent — exploring alone but returning for support. Parents may begin reinforcing or scouting next year&#39;s nesting site.</p>
+              <div class="month-obs">
+                <div class="month-obs-title">What to watch for</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Juvenile foraging independently for short periods</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Juveniles practising bill manipulation: opening packages, probing cracks</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Parents watching from distance while juvenile forages</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Increased interactions with neighbouring crow families</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SEPTEMBER -->
+          <div class="month-card" id="mc-sep">
+            <div class="month-header" onclick="toggleMonth('mc-sep')">
+              <div class="month-icon">🍂</div>
+              <div><div class="month-title">September</div><div class="month-subtitle">Thermals · aerial competition · mobbing</div></div>
+              <div class="month-chevron">▼</div>
+            </div>
+            <div class="month-body">
+              <p>Autumn felt clearly. Large flocks circle industrial areas, using thermals from heated asphalt and flat rooftops. Crows and gulls compete for the same airspace with different strategies: gulls dominate in calm weather with their long wings; crows dominate in gusty autumn wind with their compact, manoeuvrable wings.</p>
+              <p>September 25 (Årsta): a long-eared owl was chased into a tree by crows and jackdaws, terrorised for hours by magpies that plucked its tail feathers. This "mobbing" behaviour drives predators from nesting areas and is one of the corvids' key collective defence tools.</p>
+              <div class="month-obs">
+                <div class="month-obs-title">What to watch for</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Thermals: crows circling in tight spirals above industrial areas</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Mobbing events: multiple crows dive-bombing a raptor or owl</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Intense food caching before first frost</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Juvenile vocal development — calls becoming stronger and more varied</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- OCTOBER -->
+          <div class="month-card" id="mc-oct">
+            <div class="month-header" onclick="toggleMonth('mc-oct')">
+              <div class="month-icon">🌬️</div>
+              <div><div class="month-title">October</div><div class="month-subtitle">Storm play · nut cracking · flocking</div></div>
+              <div class="month-chevron">▼</div>
+            </div>
+            <div class="month-body">
+              <p>Dramatic autumn weather. Crows "play" in storms — acrobatic flying high in the wind strengthens flight muscles ahead of winter. Flocking increases: restless groups of young crows move across the city in preparation for winter. In southern Sweden, crows have been observed placing walnuts on roads and waiting for cars to crack them open, then retrieving the kernels — a learned cultural behaviour spread through observation.</p>
+              <div class="month-obs">
+                <div class="month-obs-title">What to watch for</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Storm flying: barrel rolls and tumbles in strong wind</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Road nut-cracking: crow drops hard food on traffic lanes</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Large restless flocks crossing the city</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Fallen fruit scavenging — apples, rowan berries</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NOVEMBER -->
+          <div class="month-card" id="mc-nov">
+            <div class="month-header" onclick="toggleMonth('mc-nov')">
+              <div class="month-icon">🌧️</div>
+              <div><div class="month-title">November</div><div class="month-subtitle">Winter movement · urban foraging</div></div>
+              <div class="month-chevron">▼</div>
+            </div>
+            <div class="month-body">
+              <p>Crows from further north (including possibly Åland) may arrive on the Swedish mainland as conditions worsen. Those staying intensify urban foraging — raking through fallen leaves and checking bins. Social dynamics grow more complex: competition for limited resources increases aggression between individuals. Migration, if it occurs, typically happens flockwise from October onwards, preferring calm or light tailwind conditions.</p>
+              <div class="month-obs">
+                <div class="month-obs-title">What to watch for</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Unfamiliar individuals appearing in established territories</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Displacement fights at reliable food sources</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Leaf-raking behaviour to expose insects and seeds</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Large communal roosts forming at dusk in tall trees</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DECEMBER -->
+          <div class="month-card" id="mc-dec">
+            <div class="month-header" onclick="toggleMonth('mc-dec')">
+              <div class="month-icon">🌃</div>
+              <div><div class="month-title">December</div><div class="month-subtitle">Winter roosts · Christmas surplus</div></div>
+              <div class="month-chevron">▼</div>
+            </div>
+            <div class="month-body">
+              <p>Urban crows in Stockholm adapt well to the city&#39;s warmth. Foraging around restaurants and bins intensifies — the Christmas season&#39;s increased food waste is a key resource. Large winter roosts form in trees near heat sources (ventilation shafts, heated buildings). Territorial disputes increase as natural food sources shrink and competition with other wintering species grows.</p>
+              <div class="month-obs">
+                <div class="month-obs-title">What to watch for</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Winter roosts: dozens of crows gathering at dusk in the same tree</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Active bin and skip foraging, especially near restaurants</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Crows near ventilation exhausts and other urban heat sources</div>
+                <div class="month-obs-item"><span class="month-obs-dot">●</span>Established pairs staying close — pair bond maintained through winter</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- end jview-cal -->
     </div>
 
     <!-- ══ TAB: THEORY ══════════════════════════════════════════════ -->
@@ -806,6 +1079,78 @@ input[type=range]::-webkit-slider-thumb{{
         </div>
 
         <div class="teori-section">
+          <div class="teori-h1">🧠 Intelligence &amp; cognition</div>
+          <div class="science-box">
+            <p>Corvids (crows, jackdaws, ravens, rooks) belong to the family Corvidae and rank among the most cognitively advanced animals on Earth. They learn new sounds throughout life, cooperate, use tools, and may be capable of empathy.</p>
+            <p><strong>Neural density:</strong> The raven&#39;s pallium contains up to 14× more neurons per gram than the human cerebral cortex. A 2020 study in <em>Science</em> showed that bird brains are structurally more similar to mammal brains than previously thought — with long-range associative circuits comparable to the neocortex.</p>
+            <p><strong>Raven development:</strong> A 2020 study in <em>Scientific Reports</em> found that hand-raised ravens tested at 4 months perform comparably to adult great apes on cognitive tasks — suggesting rapid and near-complete cognitive maturation very early in life.</p>
+          </div>
+          <div class="science-box">
+            <p><strong>Mourning the dead:</strong> Research by Dr Kaeli Swift (University of Washington) documented corvids gathering in large groups around dead flock members, leaving objects (sticks, feathers) at the body, and following the corpse for days. Brain scans showed activation of threat-memory regions — suggesting these gatherings serve a functional purpose: learning about danger from the manner of death.</p>
+          </div>
+          <div class="tip-box">
+            <p><strong>Old field observation (Shetland Islands, 1888):</strong> About 50 crows were seen gathered on a field in what looked like a "court". One crow stood apart as if on trial. After a period of intense calling it crouched, appearing to beg for mercy — and was then executed by the flock, which scattered immediately. Such reports of apparent collective social judgment have been noted across multiple historical sources.</p>
+          </div>
+        </div>
+
+        <div class="teori-section">
+          <div class="teori-h1">✂️ Crow training</div>
+          <div class="science-box">
+            <p>Because crows learn quickly and retain information long-term, positive reinforcement training is effective. The key is <strong>consistency, patience, and a reliable reward</strong> delivered immediately after the desired behaviour.</p>
+            <p>Behavioural researcher Christian Gunther-Hanssen developed a pilot project in Södertälje where crows were trained to collect cigarette butts in exchange for food from a vending machine — a project that became international news. The principle can be applied to any retrievable object.</p>
+          </div>
+          <div class="guide-step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <div class="step-title">Establish a food relationship first</div>
+              <div class="step-desc">Before any training, build a reliable feeding routine (same time, same place, same signal). The crow must associate you with reward before it will engage with training tasks. This phase takes 1–4 weeks.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <div class="step-title">Introduce the target object</div>
+              <div class="step-desc">Place the target item (e.g. a cigarette butt, a coin, a marked stone) near the feeding spot. Reward the crow any time it approaches or touches the object — even if it just investigates it. Use a short, repeatable reward sound (whistle or click) immediately at the moment of correct behaviour.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <div class="step-title">Shape pick-up behaviour</div>
+              <div class="step-desc">Reward only when the crow picks up the object. Do not reward approach alone. Place multiple objects on the ground; reward each pick-up. Crows are fast learners — expect to see deliberate pick-ups within days once the association is formed.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <div class="step-title">Add a deposit location</div>
+              <div class="step-desc">Place a small container (bowl, box) near the feeding point. Reward the crow only when it drops the object into the container. Start with the container directly below where the crow normally lands; gradually move it to a fixed permanent location.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="step-num">5</div>
+            <div class="step-body">
+              <div class="step-title">Increase difficulty gradually</div>
+              <div class="step-desc">Scatter objects at different distances and heights. Introduce similar-looking non-target items; only reward the correct object. The crow will learn to discriminate. Once reliable in one environment, test in different weather and lighting conditions.</div>
+            </div>
+          </div>
+          <div class="warn-box">
+            <p><strong>Never use punishment.</strong> Crows have a long, precise memory for negative experiences. A single bad encounter can undo weeks of trust-building. If a session goes poorly, simply end it — do not withhold food as punishment.</p>
+          </div>
+          <div class="tip-box">
+            <p><strong>Whistle cue:</strong> Establish a consistent whistle or sound before presenting food. Over time the whistle alone will bring crows from considerable distance — useful for calling them to a training session.</p>
+          </div>
+        </div>
+
+        <div class="teori-section">
+          <div class="teori-h1">🐾 Enemies &amp; mobbing</div>
+          <div class="science-box">
+            <p>Natural enemies include eagle owls and hawks. However, crows in groups can overwhelm and kill a hawk that attacks a nest — and have been documented burying the carcass under branches afterwards. Mobbing behaviour (coordinated harassment of a larger predator) is one of the corvid family&#39;s most sophisticated collective defence strategies. Crows on Stockholm&#39;s bridges have been seen circling eagles passing through their territory.</p>
+            <p>Other species also mob crows: fieldfares (björktrastar) are particularly aggressive during their own breeding season and will dive-bomb crows repeatedly, sometimes even depositing droppings on them in flight.</p>
+          </div>
+        </div>
+
+        <div class="teori-section">
           <div class="teori-h1">📚 References</div>
           <div class="stat-card" style="padding:12px 14px">
             <div class="ref-item">Marzluff, J.M. et al. (2010). <em>Lasting recognition of threatening people by wild American crows.</em> Animal Behaviour, 79(3), 699–707.</div>
@@ -815,6 +1160,10 @@ input[type=range]::-webkit-slider-thumb{{
             <div class="ref-item">Emery, N.J. &amp; Clayton, N.S. (2004). <em>The mentality of crows.</em> Science, 306, 1903–1907.</div>
             <div class="ref-item">Cornell Lab of Ornithology (2012). <em>Crow behavior and vocal communication.</em> Birds of North America Online.</div>
             <div class="ref-item">xeno-canto Foundation (2024). <em>Corvus cornix recordings.</em> xeno-canto.org. CC BY-NC-SA 4.0.</div>
+            <div class="ref-item">Olkowicz, S. et al. (2016). <em>Birds have primate-like numbers of neurons in the forebrain.</em> PNAS, 113(26), 7255–7260.</div>
+            <div class="ref-item">Kabadayi, C. &amp; Osvath, M. (2017). <em>Ravens parallel great apes in flexible planning for tool-use and bartering.</em> Science, 357(6347), 202–204.</div>
+            <div class="ref-item">Swift, K.N. &amp; Marzluff, J.M. (2015). <em>Wild American crows gather around their dead to learn about danger.</em> Animal Behaviour, 109, 187–197.</div>
+            <div class="ref-item">Güntürkün, O. &amp; Bugnyar, T. (2016). <em>Cognition without cortex.</em> Trends in Cognitive Sciences, 20(4), 291–303.</div>
           </div>
         </div>
 
@@ -1064,6 +1413,21 @@ function dbOp(store,mode,fn) {{
     const tx=db.transaction(store,mode), req=fn(tx.objectStore(store));
     req.onsuccess=()=>res(req.result); req.onerror=()=>rej(req.error);
   }});
+}}
+
+// ═══════════════════════════════════════════════════════════════════
+// JOURNAL SUB-NAV
+// ═══════════════════════════════════════════════════════════════════
+function switchJournalView(view) {{
+  document.querySelectorAll('.journal-view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.jnav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('jview-'+view).classList.add('active');
+  document.getElementById('jnav-'+view).classList.add('active');
+}}
+
+function toggleMonth(id) {{
+  const card = document.getElementById(id);
+  if (card) card.classList.toggle('open');
 }}
 
 // ═══════════════════════════════════════════════════════════════════
