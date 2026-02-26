@@ -1,6 +1,9 @@
-# 🐦‍⬛ CrowTalk
+<p align="center">
+  <img src="logo.png" alt="CrowTalk" width="160">
+</p>
 
-**A field tool for studying and communicating with corvids — works offline on iPhone.**
+<h1 align="center">CrowTalk</h1>
+<p align="center"><b>A field tool for studying and communicating with corvids — works offline on iPhone.</b></p>
 
 CrowTalk is a single-file HTML app built for fieldwork. It combines a library of synthesized and real crow sounds, a microphone recorder with GPS tagging, a field journal, and a communication guide — all without requiring an internet connection or app store.
 
@@ -10,7 +13,7 @@ CrowTalk is a single-file HTML app built for fieldwork. It combines a library of
 
 > 📱 Open in Safari on iPhone → tap **Share → Add to Home Screen** for a full offline app experience.
 
-`https://<your-username>.github.io/crowtalk/CrowTalk_App.html`
+`https://expandtalk.github.io/crowtalk/`
 
 ---
 
@@ -43,7 +46,7 @@ Requirements: Python 3, audio files in `ljud/`
 python3 build_crowtalk.py
 ```
 
-Output: `CrowTalk_App.html` (~17 MB, self-contained)
+Output: `index.html` (~17 MB, self-contained)
 
 Transfer to iPhone via **AirDrop**, **iCloud Drive**, or **Google Drive**.
 

@@ -10,6 +10,23 @@ AUDIO_DIR = os.path.join(_HERE, "ljud")
 OUTPUT    = os.path.join(_HERE, "index.html")
 MAX_SIZE  = 6 * 1024 * 1024
 
+# GitHub Pages base URL – used for og:image (social sharing preview)
+GITHUB_PAGES_URL = "https://expandtalk.github.io/crowtalk"
+
+def _b64_icon(filename):
+    """Return data URI for an icon file if it exists, else empty string."""
+    path = os.path.join(_HERE, filename)
+    if not os.path.exists(path):
+        return ''
+    ext = filename.rsplit('.', 1)[-1].lower()
+    mime = {'png': 'image/png', 'ico': 'image/x-icon', 'svg': 'image/svg+xml'}.get(ext, 'image/png')
+    with open(path, 'rb') as f:
+        return f'data:{mime};base64,{base64.b64encode(f.read()).decode()}'
+
+ICON_180   = _b64_icon('icon-180.png')   # Apple Touch Icon
+ICON_32    = _b64_icon('icon-32.png')    # Favicon
+ICON_APPLE = ICON_180 or _b64_icon('icon-192.png')  # fallback to 192
+
 print("🔊 Laddar ljudfiler...")
 
 # Known GPS coordinates for XC recordings (lat, lon from xeno-canto.org metadata)
@@ -34,11 +51,14 @@ for fname in sorted(os.listdir(AUDIO_DIR)):
         print(f"  ↩ skip  {fname}  ({size//1024}KB)")
         continue
     xc_id = fname.split(' ')[0]
+    base_no_ext = os.path.splitext(fname)[0]
+    parts = base_no_ext.split(' - ', 1)
+    fname_label = parts[1].strip() if len(parts) > 1 else base_no_ext
     mime  = 'audio/wav' if fname.endswith('.wav') else 'audio/mpeg'
     coords = XC_COORDS.get(xc_id)
     with open(path, 'rb') as f:
         b64 = base64.b64encode(f.read()).decode('utf-8')
-    recordings.append({'id': xc_id, 'mime': mime, 'size': size, 'audio': b64,
+    recordings.append({'id': xc_id, 'fname_label': fname_label, 'mime': mime, 'size': size, 'audio': b64,
                         'lat': coords[0] if coords else None,
                         'lon': coords[1] if coords else None})
     print(f"  ✓ {xc_id}  {size//1024}KB")
@@ -46,7 +66,7 @@ for fname in sorted(os.listdir(AUDIO_DIR)):
 print(f"\n  → {len(recordings)} inspelningar inbäddade\n")
 
 REC_JSON = json.dumps([
-    {'id': r['id'], 'mime': r['mime'], 'size': r['size'], 'audio': r['audio'],
+    {'id': r['id'], 'fname_label': r['fname_label'], 'mime': r['mime'], 'size': r['size'], 'audio': r['audio'],
      'lat': r['lat'], 'lon': r['lon']}
     for r in recordings
 ], ensure_ascii=False)
@@ -59,6 +79,16 @@ html = f"""<!DOCTYPE html>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="CrowTalk">
+<meta name="description" content="Study and communicate with corvids — works fully offline on iPhone">
+<meta property="og:title" content="CrowTalk">
+<meta property="og:description" content="Field tool for studying hooded crows — sound library, recorder, journal. Offline-first on iPhone.">
+<meta property="og:image" content="{GITHUB_PAGES_URL}/social.png">
+<meta property="og:url" content="{GITHUB_PAGES_URL}/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{GITHUB_PAGES_URL}/social.png">
+{'<link rel="apple-touch-icon" href="' + ICON_APPLE + '">' if ICON_APPLE else ''}
+{'<link rel="icon" type="image/png" href="' + ICON_32 + '">' if ICON_32 else ''}
 <title>CrowTalk</title>
 <style>
 *,*::before,*::after{{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}}
@@ -126,12 +156,15 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-
 .sound-row{{
   display:flex;align-items:center;gap:12px;
   padding:12px;background:var(--s1);border:1px solid var(--border);
+  border-left-width:3px;
   border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all 0.12s;
   -webkit-user-select:none;user-select:none
 }}
 .sound-row:active{{background:var(--s2)}}
 .sound-row.playing{{border-color:var(--green);background:rgba(62,207,114,0.06)}}
 .sound-row.danger{{border-color:var(--red);background:rgba(232,85,85,0.04)}}
+.sound-row.type-real{{border-left-color:var(--blue)}}
+.sound-row.type-synth{{border-left-color:var(--amber);background:rgba(240,168,50,0.04)}}
 .mini-play{{
   width:42px;height:42px;border-radius:50%;flex-shrink:0;border:1.5px solid var(--border);
   background:var(--s2);display:flex;align-items:center;justify-content:center;transition:all 0.15s
@@ -149,10 +182,10 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-
 }}
 .sound-cat.labeled{{background:var(--gdim);border-color:var(--green);color:var(--green)}}
 .sound-cat.danger-cat{{background:rgba(232,85,85,0.15);border-color:var(--red);color:var(--red)}}
-.type-dot{{width:6px;height:6px;border-radius:50%;flex-shrink:0}}
-.type-dot.real{{background:var(--blue)}}
-.type-dot.synth{{background:var(--amber)}}
-.type-dot.danger{{background:var(--red)}}
+.type-badge{{font-size:9px;font-weight:700;letter-spacing:0.5px;padding:2px 5px;border-radius:4px;flex-shrink:0;font-family:monospace}}
+.type-badge.real{{background:rgba(79,168,232,0.15);color:var(--blue);border:1px solid rgba(79,168,232,0.35)}}
+.type-badge.synth{{background:rgba(240,168,50,0.15);color:var(--amber);border:1px solid rgba(240,168,50,0.35)}}
+.type-badge.danger{{background:rgba(232,85,85,0.15);color:var(--red);border:1px solid rgba(232,85,85,0.35)}}
 .empty-state{{padding:40px 16px;text-align:center;color:var(--t3);font-size:13px}}
 
 /* ── FIELD PLAYER OVERLAY ───────────────────────────────────────── */
@@ -1371,10 +1404,12 @@ function buildAllItems() {{
   // 2. XC library recordings – geo-sorted if user position is known
   let reals = RECORDINGS.map(r => {{
     const dist = (userLat && r.lat && r.lon) ? haversine(userLat, userLon, r.lat, r.lon) : null;
+    const phonetic = lbl[r.id]?.phonetic || '';
+    const sizeMeta = (r.size/1024).toFixed(0) + ' KB · ' + (r.mime==='audio/wav'?'WAV':'MP3') + (dist!==null?' · '+Math.round(dist)+'km':'');
     return {{
       id: r.id, type:'real', badge:'xc',
-      name: lbl[r.id]?.name || r.id,
-      sub: (r.size/1024).toFixed(0) + ' KB · ' + (r.mime==='audio/wav'?'WAV':'MP3') + (dist!==null?' · '+Math.round(dist)+'km':''),
+      name: lbl[r.id]?.name || r.fname_label || r.id,
+      sub: phonetic || sizeMeta,
       cat: lbl[r.id]?.category || '',
       notes: lbl[r.id]?.notes || '',
       audio: r, synth: null, danger: false, dist,
@@ -1510,11 +1545,11 @@ function renderSoundList() {{
     const catLabel = CATEGORIES.find(c=>c.id===item.cat)?.label || '';
     const hasCat   = !!item.cat;
     const isDanger = item.danger;
-    return `<div class="sound-row ${{isDanger?'danger':''}}" id="row-${{item.id}}" data-idx="${{i}}" onclick="openPlayer(${{i}})">
+    return `<div class="sound-row type-${{item.type}} ${{isDanger?'danger':''}}" id="row-${{item.id}}" data-idx="${{i}}" onclick="openPlayer(${{i}})">
       <div class="mini-play" id="mp-${{item.id}}">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
       </div>
-      <div class="type-dot ${{isDanger?'danger':item.type}}"></div>
+      <div class="type-badge ${{isDanger?'danger':item.type}}">${{isDanger?'⚠':item.type==='real'?'XC':'SYN'}}</div>
       <div class="sound-info">
         <div class="sound-name">${{item.name}}${{isDanger?' ⚠️':''}}</div>
         <div class="sound-meta">${{item.sub}}</div>
