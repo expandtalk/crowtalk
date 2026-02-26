@@ -5,8 +5,9 @@ recording capability, field journal, alarm safety, and theory page.
 """
 import base64, os, json
 
-AUDIO_DIR = "/sessions/eager-wizardly-darwin/mnt/crowtalk/ljud"
-OUTPUT    = "/sessions/eager-wizardly-darwin/mnt/crowtalk/CrowTalk_App.html"
+_HERE     = os.path.dirname(os.path.abspath(__file__))
+AUDIO_DIR = os.path.join(_HERE, "ljud")
+OUTPUT    = os.path.join(_HERE, "CrowTalk_App.html")
 MAX_SIZE  = 6 * 1024 * 1024
 
 print("🔊 Laddar ljudfiler...")
