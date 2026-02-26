@@ -188,6 +188,21 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-
 .type-badge.synth{{background:rgba(240,168,50,0.15);color:var(--amber);border:1px solid rgba(240,168,50,0.35)}}
 .type-badge.danger{{background:rgba(232,85,85,0.15);color:var(--red);border:1px solid rgba(232,85,85,0.35)}}
 .empty-state{{padding:40px 16px;text-align:center;color:var(--t3);font-size:13px}}
+.drag-handle{{width:18px;height:42px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--t3);cursor:grab;touch-action:none}}
+.drag-handle:active{{cursor:grabbing;color:var(--t2)}}
+.drag-handle svg{{pointer-events:none}}
+.sound-row.drag-over{{border-top:2px solid var(--blue)}}
+.sound-row.dragging{{opacity:0.3;pointer-events:none}}
+.help-btn{{width:30px;height:30px;border-radius:50%;background:var(--s2);border:1px solid var(--border);color:var(--t2);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;padding:0}}
+.help-btn:active{{background:var(--s3)}}
+.help-overlay{{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.72);display:flex;align-items:flex-end}}
+.help-sheet{{background:var(--s1);border-radius:18px 18px 0 0;padding:22px 20px;padding-bottom:calc(env(safe-area-inset-bottom) + 28px);width:100%;max-height:75vh;overflow-y:auto}}
+.help-sheet-head{{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}}
+.help-sheet h2{{font-size:17px;font-weight:700;color:var(--t1)}}
+.help-close{{background:var(--s3);border:none;color:var(--t2);width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}}
+.help-body p{{font-size:14px;color:var(--t2);line-height:1.6;margin-bottom:10px}}
+.help-body ul{{margin:0 0 10px 18px;font-size:14px;color:var(--t2);line-height:1.9}}
+.help-body b{{color:var(--t1)}}
 
 /* ── FIELD PLAYER OVERLAY ───────────────────────────────────────── */
 .player-overlay{{
@@ -573,6 +588,17 @@ input[type=range]::-webkit-slider-thumb{{
       <p id="topSub">Corvus cornix</p>
     </div>
     <span class="offline-badge">OFFLINE</span>
+    <button class="help-btn" onclick="showHelp()">?</button>
+  </div>
+
+  <div class="help-overlay" id="helpOverlay" style="display:none" onclick="closeHelp()">
+    <div class="help-sheet" onclick="event.stopPropagation()">
+      <div class="help-sheet-head">
+        <h2 id="helpTitle"></h2>
+        <button class="help-close" onclick="closeHelp()">×</button>
+      </div>
+      <div class="help-body" id="helpBody"></div>
+    </div>
   </div>
 
   <div class="content">
@@ -1401,7 +1427,7 @@ function buildAllItems() {{
   }});
   if (userLat) reals.sort((a,b) => (a.dist??9999) - (b.dist??9999));
 
-  return [...synths, ...reals];
+  return applyCustomOrder([...synths, ...reals]);
 }}
 
 // ── Labels (localStorage) ───────────────────────────────────────────
@@ -1453,6 +1479,7 @@ function toggleMonth(id) {{
 // NAV
 // ═══════════════════════════════════════════════════════════════════
 function switchTab(name) {{
+  activeTab = name;
   stopMain();
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
@@ -1513,6 +1540,123 @@ function getFilteredItems() {{
 }}
 
 // ═══════════════════════════════════════════════════════════════════
+// CUSTOM ROW ORDER (drag-to-reorder)
+// ═══════════════════════════════════════════════════════════════════
+let activeTab = 'library';
+function getCustomOrder(){{try{{return JSON.parse(localStorage.getItem('rowOrder')||'[]')}}catch{{return[]}}}}
+function saveCustomOrder(ids){{localStorage.setItem('rowOrder',JSON.stringify(ids))}}
+function applyCustomOrder(items){{
+  const order=getCustomOrder();
+  if(!order.length) return items;
+  const pos={{}};order.forEach((id,i)=>pos[id]=i);
+  return [...items].sort((a,b)=>((pos[a.id]??9999)-(pos[b.id]??9999)));
+}}
+
+// ── HTML5 drag (desktop) ─────────────────────────────────────────────
+let dragSrcIdx=-1;
+function dragStart(e,idx){{
+  dragSrcIdx=idx;
+  e.dataTransfer.effectAllowed='move';
+  setTimeout(()=>document.querySelector(`[data-idx="${{idx}}"]`)?.classList.add('dragging'),0);
+}}
+function dragOver(e,idx){{
+  e.preventDefault();
+  document.querySelectorAll('.sound-row.drag-over').forEach(r=>r.classList.remove('drag-over'));
+  if(idx!==dragSrcIdx) document.querySelector(`[data-idx="${{idx}}"]`)?.classList.add('drag-over');
+}}
+function dragEnd(){{
+  document.querySelectorAll('.sound-row').forEach(r=>r.classList.remove('dragging','drag-over'));
+  dragSrcIdx=-1;
+}}
+function dragDrop(e,toIdx){{
+  e.preventDefault();
+  if(dragSrcIdx>=0&&dragSrcIdx!==toIdx) performDrop(dragSrcIdx,toIdx);
+  dragEnd();
+}}
+
+// ── Touch drag (mobile/iPhone) ────────────────────────────────────────
+let tdActive=false,tdFrom=-1,tdTo=-1,tdClone=null,tdRow=null;
+function tdStart(e,idx,handle){{
+  e.preventDefault();e.stopPropagation();
+  tdActive=true;tdFrom=idx;tdTo=idx;
+  tdRow=handle.closest('.sound-row');
+  tdRow.classList.add('dragging');
+  const r=tdRow.getBoundingClientRect();
+  tdClone=tdRow.cloneNode(true);
+  tdClone.style.cssText=`position:fixed;pointer-events:none;opacity:0.8;z-index:9999;width:${{r.width}}px;left:${{r.left}}px;top:${{r.top}}px;border-radius:10px;`;
+  document.body.appendChild(tdClone);
+}}
+document.addEventListener('touchmove',e=>{{
+  if(!tdActive)return;
+  e.preventDefault();
+  const t=e.touches[0];
+  if(tdClone)tdClone.style.top=(t.clientY-tdClone.offsetHeight/2)+'px';
+  tdClone.style.display='none';
+  const el=document.elementFromPoint(t.clientX,t.clientY);
+  tdClone.style.display='';
+  const targetRow=el?.closest('.sound-row[data-idx]');
+  document.querySelectorAll('.sound-row.drag-over').forEach(r=>r.classList.remove('drag-over'));
+  if(targetRow&&targetRow!==tdRow){{
+    tdTo=parseInt(targetRow.dataset.idx);
+    targetRow.classList.add('drag-over');
+  }}
+}},{{passive:false}});
+document.addEventListener('touchend',()=>{{
+  if(!tdActive)return;
+  tdActive=false;
+  if(tdClone){{tdClone.remove();tdClone=null;}}
+  document.querySelectorAll('.sound-row').forEach(r=>r.classList.remove('dragging','drag-over'));
+  if(tdFrom>=0&&tdTo>=0&&tdFrom!==tdTo) performDrop(tdFrom,tdTo);
+  tdFrom=-1;tdTo=-1;tdRow=null;
+}});
+
+// ── Shared drop logic ─────────────────────────────────────────────────
+function performDrop(fromIdx,toIdx){{
+  const all=buildAllItems();
+  const fromId=filteredItems[fromIdx].id;
+  const toId=filteredItems[toIdx].id;
+  const fromAllIdx=all.findIndex(x=>x.id===fromId);
+  const[moved]=all.splice(fromAllIdx,1);
+  const toAllIdx=all.findIndex(x=>x.id===toId);
+  all.splice(toAllIdx,0,moved);
+  saveCustomOrder(all.map(x=>x.id));
+  renderSoundList();
+}}
+
+// ── Help system ────────────────────────────────────────────────────────
+const HELP={{
+  library:{{title:'Library',body:`<p>Browse and play all crow sounds.</p><ul>
+<li><b>SYN</b> (amber) — Synthesized via Web Audio — no audio file needed</li>
+<li><b>XC</b> (blue) — Real field recordings from xeno-canto.org</li>
+<li><b>⚠</b> (red) — Alarm / danger calls — use with care near crows</li></ul>
+<p>Tap a row to open the player. Drag the <b>⠿</b> handle on the left to reorder rows — your order is saved automatically. Use the filter buttons above to show only one type.</p>`}},
+  record:{{title:'Record',body:`<p>Record crow sounds in the field with automatic GPS tagging.</p><ul>
+<li>Tap the red button to start / stop a recording</li>
+<li>After recording, set category, phonetics, and the crow's reaction</li>
+<li>GPS coordinates are attached automatically if location access is granted</li>
+<li>All recordings are stored locally on your device (IndexedDB)</li></ul>`}},
+  dagbok:{{title:'Field Journal',body:`<p>Log your crow observation sessions.</p><ul>
+<li>Add entries with date, place, weather, and crow activity notes</li>
+<li>Use the monthly view to see your session history</li>
+<li>Entries are stored locally — export them from the <b>Data</b> tab</li></ul>`}},
+  teori:{{title:'Theory',body:`<p>A guide to crow communication science.</p><ul>
+<li>Learn the main call categories: contact, alarm, food, play, and more</li>
+<li>Understand crow body language and social signals</li>
+<li>Use as a reference when classifying your own recordings</li></ul>`}},
+  data:{{title:'Data',body:`<p>Statistics and data export for your field sessions.</p><ul>
+<li>View counts of recordings and journal entries</li>
+<li>Export all data as JSON for analysis or sharing</li>
+<li>JSON format is compatible with bird call classification models</li></ul>`}},
+}};
+function showHelp(){{
+  const h=HELP[activeTab]||{{title:'Help',body:'<p>No help available.</p>'}};
+  document.getElementById('helpTitle').textContent=h.title;
+  document.getElementById('helpBody').innerHTML=h.body;
+  document.getElementById('helpOverlay').style.display='flex';
+}}
+function closeHelp(){{document.getElementById('helpOverlay').style.display='none';}}
+
+// ═══════════════════════════════════════════════════════════════════
 // SOUND LIST
 // ═══════════════════════════════════════════════════════════════════
 let filteredItems = [];
@@ -1529,7 +1673,17 @@ function renderSoundList() {{
     const catLabel = CATEGORIES.find(c=>c.id===item.cat)?.label || '';
     const hasCat   = !!item.cat;
     const isDanger = item.danger;
-    return `<div class="sound-row type-${{item.type}} ${{isDanger?'danger':''}}" id="row-${{item.id}}" data-idx="${{i}}" onclick="openPlayer(${{i}})">
+    return `<div class="sound-row type-${{item.type}} ${{isDanger?'danger':''}}" id="row-${{item.id}}" data-idx="${{i}}"
+      draggable="true"
+      ondragstart="dragStart(event,${{i}})" ondragover="dragOver(event,${{i}})" ondrop="dragDrop(event,${{i}})" ondragend="dragEnd()"
+      onclick="openPlayer(${{i}})">
+      <div class="drag-handle" ontouchstart="tdStart(event,${{i}},this)">
+        <svg viewBox="0 0 10 16" fill="currentColor" width="10" height="16">
+          <circle cx="2" cy="2" r="1.5"/><circle cx="8" cy="2" r="1.5"/>
+          <circle cx="2" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/>
+          <circle cx="2" cy="14" r="1.5"/><circle cx="8" cy="14" r="1.5"/>
+        </svg>
+      </div>
       <div class="mini-play" id="mp-${{item.id}}">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
       </div>
