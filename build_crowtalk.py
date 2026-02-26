@@ -1178,7 +1178,7 @@ function showAlarmModal(synthName, callback) {{
     : 'Five or more mobbing calls rally the flock against a threat. If crows associate this sound with you, it can disrupt all future contact.';
   document.getElementById('alarmModalScience').innerHTML = isAlarm
     ? '🔬 Research shows crows identify and remember "dangerous faces" for up to 5 years (Marzluff et al., 2010). Negative associations spread to the entire flock.'
-    : '🔬 Mobbing behaviour activates the crow\'s "threat memory". The reaction is stronger and longer-lasting than alarm and can affect your relationship with the entire local population.';
+    : '🔬 Mobbing behaviour activates the crow&#39;s "threat memory". The reaction is stronger and longer-lasting than alarm and can affect your relationship with the entire local population.';
   alarmModalCallback = callback;
   modal.classList.add('open');
 }}
