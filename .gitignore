@@ -1,0 +1,12 @@
+# Audio source files – local only, too large for git
+ljud/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db

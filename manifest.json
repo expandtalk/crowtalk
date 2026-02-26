@@ -1,0 +1,13 @@
+{
+  "name": "CrowTalk",
+  "short_name": "CrowTalk",
+  "description": "Study and communicate with corvids offline",
+  "start_url": "./CrowTalk_App.html",
+  "display": "standalone",
+  "background_color": "#07090a",
+  "theme_color": "#07090a",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
