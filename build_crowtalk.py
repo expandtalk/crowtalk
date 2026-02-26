@@ -89,6 +89,7 @@ html = f"""<!DOCTYPE html>
 <meta name="twitter:image" content="{GITHUB_PAGES_URL}/social.png">
 {'<link rel="apple-touch-icon" href="' + ICON_APPLE + '">' if ICON_APPLE else ''}
 {'<link rel="icon" type="image/png" href="' + ICON_32 + '">' if ICON_32 else ''}
+<link rel="manifest" href="manifest.json">
 <title>CrowTalk</title>
 <style>
 *,*::before,*::after{{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}}
